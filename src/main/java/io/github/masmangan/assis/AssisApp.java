@@ -1,9 +1,17 @@
-package io.github.masmangan.assis;
+/*
+ * Copyright (c) 2025, Marco Mangan. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ */
+  
+ package io.github.masmangan.assis;
 
 /**
- * Class AssisApp is the generator entry point.
+ * The {@code AssisApp} class is the PlantUML diagram generator entry point.
  */
-public class AssisApp {
+public final class AssisApp {
+
+    private AssisApp() { } 
+    
     /**
      * Generates PlantUML class diagrams from Java source code.
      * 

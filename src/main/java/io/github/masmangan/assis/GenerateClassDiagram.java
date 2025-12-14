@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025, Marco Mangan. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ */
+ 
 package io.github.masmangan.assis;
 
 import java.io.PrintWriter;
@@ -20,12 +25,12 @@ import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 /**
- * 
+ * The {@code GenerateClassDiagram} class is a PlantUML class diagram generator.
  */
 public class GenerateClassDiagram {
 
     /**
-     * 
+     * Simplified symbol table entry
      */
     static class TypeInfo {
         String pkg;
@@ -37,6 +42,7 @@ public class GenerateClassDiagram {
     }
 
     /**
+     * Generates code for the current project.
      * 
      * @throws Exception
      */
@@ -48,8 +54,9 @@ public class GenerateClassDiagram {
     }
 
     /**
-     * 
-     * @param args
+     * Generates code for a given source code and output path.
+     * @param src source code path
+     * @param out output path
      * @throws Exception
      */
     public static void generate(Path src, Path out) throws Exception {
@@ -164,17 +171,21 @@ public class GenerateClassDiagram {
     }
 
     /**
+     * Generates a footer with Assis watermark.
      * 
-     * @param pw
+     * @param pw this translation open printwriter
      */
     private static void addFooter(PrintWriter pw) {
+        pw.println();
         pw.println("footer ");
         pw.println("Generated with ASSIS (Java → UML)");
         pw.println("https://github.com/masmangan/javaparser-to-plantuml");
         pw.println("end footer");
+        pw.println();
     }
 
     /**
+     * Extracts name from classifier.
      * 
      * @param qname
      * @return
