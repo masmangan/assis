@@ -1,16 +1,23 @@
 package io.github.masmangan.assis;
 
-import com.github.javaparser.StaticJavaParser;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.xml.transform.Source;
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 /**
  * 
@@ -31,14 +38,21 @@ public class GenerateClassDiagram {
 
     /**
      * 
-     * @param args
      * @throws Exception
      */
-    public static void generate(String[] args) throws Exception {
+    public static void generate() throws Exception {
         Path src = Paths.get("src/main/java");
         Path out = Paths.get("docs/uml/class-diagram.puml");
         Files.createDirectories(out.getParent());
+        generate(src, out);
+    }
 
+    /**
+     * 
+     * @param args
+     * @throws Exception
+     */
+    public static void generate(Path src, Path out) throws Exception {
         Map<String, TypeInfo> types = new HashMap<>();
         List<Path> files = new ArrayList<>();
         if (Files.exists(src)) {
@@ -141,21 +155,23 @@ public class GenerateClassDiagram {
             pw.println();
             pw.println("left to right direction");
 
-            addAssisNote(pw);
-            
+            addFooter(pw);
+
             pw.println("@enduml");
         }
 
         System.out.println("Diagram at: " + out.toAbsolutePath());
     }
 
-    private static void addAssisNote(PrintWriter pw) {
-            pw.println("note bottom");
-            pw.println("Generated with ASSIS (Java → UML)");
-
-            pw.println("Source repository:");
-            pw.println("https://github.com/masmangan/javaparser-to-plantuml");
-            pw.println("end note");
+    /**
+     * 
+     * @param pw
+     */
+    private static void addFooter(PrintWriter pw) {
+        pw.println("footer ");
+        pw.println("Generated with ASSIS (Java → UML)");
+        pw.println("https://github.com/masmangan/javaparser-to-plantuml");
+        pw.println("end footer");
     }
 
     /**
@@ -167,4 +183,5 @@ public class GenerateClassDiagram {
         int lt = qname.lastIndexOf('.');
         return (lt >= 0) ? qname.substring(lt + 1) : qname;
     }
+
 }
