@@ -9,6 +9,9 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,14 +178,17 @@ public class GenerateClassDiagram {
      * 
      * @param pw this translation open printwriter
      */
-    private static void addFooter(PrintWriter pw) {
-        pw.println();
-        pw.println("footer ");
-        pw.println("Generated with ASSIS (Java → UML)");
-        pw.println("https://github.com/masmangan/javaparser-to-plantuml");
-        pw.println("end footer");
-        pw.println();
-    }
+private static void addFooter(PrintWriter pw) {
+    String timestamp = OffsetDateTime
+            .now(ZoneOffset.UTC)
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+    pw.println();
+    pw.println("center footer");
+    pw.println("Generated with ASSIS (Java -> UML) at: " + timestamp);
+    pw.println("https://github.com/masmangan/javaparser-to-plantuml");
+    pw.println();
+}
 
     /**
      * Extracts name from classifier.
