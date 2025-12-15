@@ -187,6 +187,7 @@ private static void addFooter(PrintWriter pw) {
     pw.println("center footer");
     pw.println("Generated with ASSIS (Java -> UML) at: " + timestamp);
     pw.println("https://github.com/masmangan/javaparser-to-plantuml");
+    pw.println("end footer");
     pw.println();
 }
 

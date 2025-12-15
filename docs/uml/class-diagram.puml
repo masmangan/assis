@@ -9,7 +9,8 @@ class GenerateClassDiagram
 left to right direction
 
 center footer
-Generated with ASSIS (Java -> UML) at: 2025-12-15T09:38:49.773697174Z
+Generated with ASSIS (Java -> UML) at: 2025-12-15T10:48:37.529665598Z
 https://github.com/masmangan/javaparser-to-plantuml
+end footer
 
 @enduml
