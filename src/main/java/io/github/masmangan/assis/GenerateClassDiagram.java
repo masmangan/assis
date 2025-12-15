@@ -2,16 +2,19 @@
  * Copyright (c) 2025, Marco Mangan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
- 
+
 package io.github.masmangan.assis;
 
 import java.io.PrintWriter;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,11 +61,15 @@ public class GenerateClassDiagram {
 
     /**
      * Generates code for a given source code and output path.
+     * 
      * @param src source code path
      * @param out output path
      * @throws Exception
      */
     public static void generate(Path src, Path out) throws Exception {
+
+        System.out.println("Scanning " + src);
+
         Map<String, TypeInfo> types = new HashMap<>();
         List<Path> files = new ArrayList<>();
         if (Files.exists(src)) {
@@ -113,9 +120,11 @@ public class GenerateClassDiagram {
             }
         }
 
+        System.out.println("Writing " + out);
+
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
-            pw.println("@startuml");
+            pw.println("@startuml class-diagram");
             // pw.println("skinparam classAttributeIconSize 0");
             pw.println("hide empty members");
             pw.println("!theme blueprint");
@@ -178,18 +187,18 @@ public class GenerateClassDiagram {
      * 
      * @param pw this translation open printwriter
      */
-private static void addFooter(PrintWriter pw) {
-    String timestamp = OffsetDateTime
-            .now(ZoneOffset.UTC)
-            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    private static void addFooter(PrintWriter pw) {
+        String timestamp = OffsetDateTime
+                .now(ZoneOffset.UTC)
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
-    pw.println();
-    pw.println("center footer");
-    pw.println("Generated with ASSIS (Java -> UML) at: " + timestamp);
-    pw.println("https://github.com/masmangan/javaparser-to-plantuml");
-    pw.println("end footer");
-    pw.println();
-}
+        pw.println();
+        pw.println("center footer");
+        pw.println("Generated with ASSIS (Java -> UML) at: " + timestamp);
+        pw.println("https://github.com/masmangan/javaparser-to-plantuml");
+        pw.println("end footer");
+        pw.println();
+    }
 
     /**
      * Extracts name from classifier.
