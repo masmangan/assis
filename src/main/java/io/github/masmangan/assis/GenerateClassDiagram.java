@@ -37,6 +37,12 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 public class GenerateClassDiagram {
 
     /**
+     * 
+     */
+    private GenerateClassDiagram() {
+    }
+
+    /**
      * Simplified symbol table entry
      */
     static class TypeInfo {
