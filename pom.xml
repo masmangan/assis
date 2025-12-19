@@ -24,7 +24,8 @@
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
-  </properties>
+    <sonar.organization>masmangan</sonar.organization>
+   </properties>
 
   <dependencyManagement>
     <dependencies>
