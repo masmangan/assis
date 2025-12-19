@@ -40,8 +40,11 @@ class DiagramGenerationHelloSampleTest {
                 outputFile);
         String puml = Files.readString(outputFile, StandardCharsets.UTF_8);
 
-        assertTrue(puml.contains("class Hello"),
+            assertTrue(puml.contains("class Hello"),
                 "Expected generated PlantUML to contain 'class Hello'. Content:\n" + puml);
+
+        assertTrue(puml.contains("main"),
+                "Expected generated PlantUML to contain 'method main'. Content:\n" + puml);
     }
 
     private static Path copySampleProjectToTemp(String resourcePath, Path targetDir)

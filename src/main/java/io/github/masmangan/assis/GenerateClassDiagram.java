@@ -21,8 +21,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -31,10 +33,20 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
+enum Kind {
+    CLASS, INTERFACE, ENUM, RECORD
+}
+
 /**
  * The {@code GenerateClassDiagram} class is a PlantUML class diagram generator.
  */
 public class GenerateClassDiagram {
+
+
+    /**
+     * 
+     */
+    private Logger logger;
 
     /**
      * 
@@ -48,7 +60,7 @@ public class GenerateClassDiagram {
     static class TypeInfo {
         String pkg;
         String name;
-        boolean isInterface;
+        Kind kind = Kind.CLASS;
         Set<String> extendsTypes = new LinkedHashSet<>();
         Set<String> implementsTypes = new LinkedHashSet<>();
         Set<String> fieldsToTypes = new LinkedHashSet<>();
@@ -75,7 +87,9 @@ public class GenerateClassDiagram {
      * @throws Exception
      */
     public static void generate(Path src, Path out) throws Exception {
-
+        ParserConfiguration config = new ParserConfiguration();
+        config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
+        StaticJavaParser.setConfiguration(config);
         System.out.println("Scanning " + src);
 
         Map<String, TypeInfo> types = new HashMap<>();
@@ -99,48 +113,64 @@ public class GenerateClassDiagram {
             String pkg = cu.getPackageDeclaration().map(pd -> pd.getName().toString()).orElse("");
 
             for (TypeDeclaration<?> td : cu.getTypes()) {
-                if (!(td instanceof ClassOrInterfaceDeclaration))
+                if (!(td instanceof ClassOrInterfaceDeclaration
+                        || td instanceof com.github.javaparser.ast.body.EnumDeclaration
+                        || td instanceof com.github.javaparser.ast.body.RecordDeclaration))
                     continue;
-
-                ClassOrInterfaceDeclaration cid = (ClassOrInterfaceDeclaration) td;
                 TypeInfo info = new TypeInfo();
-                info.pkg = pkg;
-                info.name = cid.getNameAsString();
-                info.isInterface = cid.isInterface();
+                                    info.pkg = pkg;
 
-                // extends / implements
-                for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
-                    info.extendsTypes.add(simpleName(ext.getNameAsString()));
+                if (td instanceof com.github.javaparser.ast.body.EnumDeclaration ed) {
+                    info.name = ed.getNameAsString();
+                    info.kind = Kind.ENUM;
+                } else if (td instanceof com.github.javaparser.ast.body.RecordDeclaration rd) {
+                    info.name = rd.getNameAsString();
+                    info.kind = Kind.RECORD;
+                } else if (td instanceof ClassOrInterfaceDeclaration cid) {
+                    info.name = cid.getNameAsString();
+                    info.kind = Kind.CLASS;
+                    if (cid.isInterface()) {
+                        info.kind = Kind.INTERFACE;
+                    }
+                    // extends / implements
+                    for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
+                        info.extendsTypes.add(simpleName(ext.getNameAsString()));
+                    }
+                    for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
+                        info.implementsTypes.add(simpleName(impl.getNameAsString()));
+                    }
+
+                    // fields -> association candidates
+                    for (FieldDeclaration fd : cid.getFields()) {
+                        String t = fd.getElementType().asString();
+                        // tira generics e arrays simples
+                        t = t.replaceAll("<.*>", "").replace("[]", "");
+                        info.fieldsToTypes.add(simpleName(t));
+                    }
+
+                    for (MethodDeclaration method : cid.getMethods()) {
+                        if (!method.isPublic())
+                            continue;
+
+                        String returnType = method.getType().asString();
+                        String name = method.getNameAsString();
+
+                        String params = method.getParameters().stream()
+                                .map(param -> param.getNameAsString() + " : " + param.getType().asString())
+                                .collect(Collectors.joining(", "));
+
+                        String flags = "";
+                        if (method.isStatic())
+                            flags += " {static}";
+                        if (method.isAbstract())
+                            flags += " {abstract}";
+                        if (method.isFinal())
+                            flags += " {final}";
+
+                        String signature = "+ " + name + "(" + params + ") : " + returnType + flags;
+                        info.methods.add(signature);
+                    }
                 }
-                for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
-                    info.implementsTypes.add(simpleName(impl.getNameAsString()));
-                }
-
-                // fields -> association candidates
-                for (FieldDeclaration fd : cid.getFields()) {
-                    String t = fd.getElementType().asString();
-                    // tira generics e arrays simples
-                    t = t.replaceAll("<.*>", "").replace("[]", "");
-                    info.fieldsToTypes.add(simpleName(t));
-                }
-
-                for (MethodDeclaration method : cid.getMethods()) {
-                    if (!method.isPublic())
-                        continue;
-
-                    String returnType = method.getType().asString();
-                    String name = method.getNameAsString();
-
-                    String params = method.getParameters().stream()
-                            .map(param -> param.getNameAsString() + " : " + param.getType().asString())
-                            .collect(Collectors.joining(", "));
-
-                    String staticTag = method.isStatic() ? " {static}" : "";
-
-                    String signature = "+ " + name + "(" + params + ") : " + returnType + staticTag;
-                    info.methods.add(signature);
-                }
-
                 types.put(info.name, info);
             }
         }
@@ -163,10 +193,14 @@ public class GenerateClassDiagram {
                 if (!pkg.isEmpty())
                     pw.println("package \"" + pkg + "\" {");
                 for (TypeInfo t : entry.getValue()) {
-                    if (t.isInterface) {
+                    if (t.kind == Kind.INTERFACE) {
                         pw.println("interface " + t.name + "{");
-                    } else {
+                    } else if (t.kind == Kind.CLASS) {
                         pw.println("class " + t.name + "{");
+                    } else if (t.kind == Kind.RECORD) {
+                        pw.println("class " + t.name + " <<record>> { ");
+                    } else if (t.kind == Kind.ENUM) {
+                        pw.println("enum " + t.name + " {");
                     }
 
                     for (String m : t.methods) {
