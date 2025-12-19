@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -96,12 +97,12 @@ public class GenerateClassDiagram {
      * @throws Exception
      */
     public static void generate(Path src, Path out) throws Exception {
-        logger.info("ASSIS " + versionOrDev() + " (Java -> UML)");
+        logger.log(Level.INFO, "ASSIS " + versionOrDev() + " (Java -> UML)");
 
         ParserConfiguration config = new ParserConfiguration();
         config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
         StaticJavaParser.setConfiguration(config);
-        logger.info("Scanning " + src);
+        logger.log(Level.INFO,"Scanning " + src);
 
         //
         Map<String, TypeInfo> types = new HashMap<>();
@@ -118,7 +119,7 @@ public class GenerateClassDiagram {
             try {
                 cu = StaticJavaParser.parse(code);
             } catch (Exception e) {
-                logger.warning("Parser fail: " + p + " (" + e.getMessage() + ")");
+                logger.log(Level.WARNING, "Parser fail: " + p + " (" + e.getMessage() + ")");
                 continue;
             }
 
@@ -187,7 +188,7 @@ public class GenerateClassDiagram {
             }
         }
 
-        logger.info("Writing " + out);
+        logger.log(Level.INFO,"Writing " + out);
 
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
