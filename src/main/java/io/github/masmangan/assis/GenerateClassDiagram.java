@@ -5,6 +5,7 @@
 
 package io.github.masmangan.assis;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 
 import java.nio.file.Files;
@@ -102,10 +103,89 @@ public class GenerateClassDiagram {
         ParserConfiguration config = new ParserConfiguration();
         config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
         StaticJavaParser.setConfiguration(config);
-        logger.log(Level.INFO, () -> "Scanning " + src);
 
-        //
         Map<String, TypeInfo> types = new HashMap<>();
+
+        logger.log(Level.INFO, () -> "Scanning " + src);
+        scanSources(src, types);
+
+        logger.log(Level.INFO, () -> "Writing " + out);
+
+        writeDiagram(out, types);
+
+        
+    }
+
+    private static void writeDiagram(Path out, Map<String, TypeInfo> types) throws IOException {
+        // Generate PlantUML
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
+            pw.println("@startuml class-diagram");
+            // pw.println("skinparam classAttributeIconSize 0");
+            pw.println("hide empty members");
+            pw.println("!theme blueprint");
+
+            // packages
+            Map<String, List<TypeInfo>> byPkg = types.values().stream()
+                    .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
+
+            for (var entry : byPkg.entrySet()) {
+                String pkg = entry.getKey();
+                if (!pkg.isEmpty())
+                    pw.println("package \"" + pkg + "\" {");
+                for (TypeInfo t : entry.getValue()) {
+                    if (t.kind == Kind.INTERFACE) {
+                        pw.println("interface " + t.name + "{");
+                    } else if (t.kind == Kind.CLASS) {
+                        pw.println("class " + t.name + "{");
+                    } else if (t.kind == Kind.RECORD) {
+                        pw.println("class " + t.name + " <<record>> { ");
+                    } else if (t.kind == Kind.ENUM) {
+                        pw.println("enum " + t.name + " {");
+                    }
+
+                    for (String m : t.methods) {
+                        pw.println("  " + m);
+                    }
+                    pw.println("}");
+                }
+
+                if (!pkg.isEmpty())
+                    pw.println("}");
+            }
+
+            // Extends and implements
+            for (TypeInfo t : types.values()) {
+                for (String e : t.extendsTypes) {
+                    if (types.containsKey(e)) {
+                        pw.println(e + " <|-- " + t.name);
+                    }
+                }
+                for (String i : t.implementsTypes) {
+                    if (types.containsKey(i)) {
+                        pw.println(i + " <|.. " + t.name);
+                    }
+                }
+            }
+
+            // Associations
+            for (TypeInfo t : types.values()) {
+                for (String f : t.fieldsToTypes) {
+                    if (types.containsKey(f) && !f.equals(t.name)) {
+                        pw.println(t.name + " --> " + f);
+                    }
+                }
+            }
+
+            pw.println();
+            pw.println("left to right direction");
+
+            addFooter(pw);
+
+            pw.println("@enduml");
+        }
+    }
+
+    private static void scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
         List<Path> files = new ArrayList<>();
         if (Files.exists(src)) {
             try (var s = Files.walk(src)) {
@@ -187,77 +267,6 @@ public class GenerateClassDiagram {
                 types.put(info.name, info);
             }
         }
-
-        logger.log(Level.INFO, () -> "Writing " + out);
-
-        // Generate PlantUML
-        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
-            pw.println("@startuml class-diagram");
-            // pw.println("skinparam classAttributeIconSize 0");
-            pw.println("hide empty members");
-            pw.println("!theme blueprint");
-
-            // packages
-            Map<String, List<TypeInfo>> byPkg = types.values().stream()
-                    .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
-
-            for (var entry : byPkg.entrySet()) {
-                String pkg = entry.getKey();
-                if (!pkg.isEmpty())
-                    pw.println("package \"" + pkg + "\" {");
-                for (TypeInfo t : entry.getValue()) {
-                    if (t.kind == Kind.INTERFACE) {
-                        pw.println("interface " + t.name + "{");
-                    } else if (t.kind == Kind.CLASS) {
-                        pw.println("class " + t.name + "{");
-                    } else if (t.kind == Kind.RECORD) {
-                        pw.println("class " + t.name + " <<record>> { ");
-                    } else if (t.kind == Kind.ENUM) {
-                        pw.println("enum " + t.name + " {");
-                    }
-
-                    for (String m : t.methods) {
-                        pw.println("  " + m);
-                    }
-                    pw.println("}");
-                }
-
-                if (!pkg.isEmpty())
-                    pw.println("}");
-            }
-
-            // Extends and implements
-            for (TypeInfo t : types.values()) {
-                for (String e : t.extendsTypes) {
-                    if (types.containsKey(e)) {
-                        pw.println(e + " <|-- " + t.name);
-                    }
-                }
-                for (String i : t.implementsTypes) {
-                    if (types.containsKey(i)) {
-                        pw.println(i + " <|.. " + t.name);
-                    }
-                }
-            }
-
-            // Associations
-            for (TypeInfo t : types.values()) {
-                for (String f : t.fieldsToTypes) {
-                    if (types.containsKey(f) && !f.equals(t.name)) {
-                        pw.println(t.name + " --> " + f);
-                    }
-                }
-            }
-
-            pw.println();
-            pw.println("left to right direction");
-
-            addFooter(pw);
-
-            pw.println("@enduml");
-        }
-
-        
     }
 
     /**
