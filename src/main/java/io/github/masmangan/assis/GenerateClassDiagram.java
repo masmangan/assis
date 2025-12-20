@@ -342,7 +342,7 @@ public class GenerateClassDiagram {
         if (cid.isInterface()) {
             info.kind = Kind.INTERFACE;
         }
-        
+
         // extends
         for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
             info.extendsTypes.add(simpleName(ext.getNameAsString()));
@@ -392,8 +392,7 @@ public class GenerateClassDiagram {
 
         String flags = getFlags(method);
 
-        String signature = "+ " + name + "(" + params + ") : " + returnType + flags;
-        return signature;
+        return "+ " + name + "(" + params + ") : " + returnType + flags;
     }
 
     /**
@@ -419,7 +418,7 @@ public class GenerateClassDiagram {
      */
     private static String getFlags(MethodDeclaration method) {
         String flags = "";
-        
+
         if (method.isStatic()) {
             flags += " {static}";
         } else if (method.isAbstract()) {
