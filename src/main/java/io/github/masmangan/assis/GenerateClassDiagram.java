@@ -56,7 +56,7 @@ public class GenerateClassDiagram {
     }
 
     /**
-     * Simplified symbol table entry
+     * Symbol table entry
      */
     static class TypeInfo {
         String pkg;
@@ -115,6 +115,7 @@ public class GenerateClassDiagram {
 
     /**
      * 
+     * @param pw
      */
     private static void addHeader(PrintWriter pw) {
         pw.println("@startuml class-diagram");
@@ -124,6 +125,8 @@ public class GenerateClassDiagram {
 
     /**
      * 
+     * @param t
+     * @return
      */
     private static String getClassifier(TypeInfo t) {
         String classifier = "class " + t.name + " {";
@@ -141,6 +144,9 @@ public class GenerateClassDiagram {
 
     /**
      * 
+     * @param pw
+     * @param byPkg
+     * @throws IOException
      */
     private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg) throws IOException {
         for (var entry : byPkg.entrySet()) {
@@ -164,7 +170,43 @@ public class GenerateClassDiagram {
 
     }
 
-    private static void writeDiagram(Path out, Map<String, TypeInfo> types) throws IOException {
+    /**
+     * 
+     * @param pw
+     * @param types
+     * @throws IOException
+     */
+    private static void writeRelationships(PrintWriter pw, Map<String, TypeInfo> types) throws IOException {
+        // Extends and implements
+        for (TypeInfo t : types.values()) {
+            for (String e : t.extendsTypes) {
+                if (types.containsKey(e)) {
+                    pw.println(e + " <|-- " + t.name);
+                }
+            }
+            for (String i : t.implementsTypes) {
+                if (types.containsKey(i)) {
+                    pw.println(i + " <|.. " + t.name);
+                }
+            }
+        }
+
+        // Associations
+        for (TypeInfo t : types.values()) {
+            for (String f : t.fieldsToTypes) {
+                if (types.containsKey(f) && !f.equals(t.name)) {
+                    pw.println(t.name + " --> " + f);
+                }
+            }
+        }
+    }
+
+    /**
+     * 
+     * @param out
+     * @param types
+     */
+    private static void writeDiagram(Path out, Map<String, TypeInfo> types) {
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
             addHeader(pw);
@@ -174,28 +216,7 @@ public class GenerateClassDiagram {
                     .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
             writePackages(pw, byPkg);
 
-            // Extends and implements
-            for (TypeInfo t : types.values()) {
-                for (String e : t.extendsTypes) {
-                    if (types.containsKey(e)) {
-                        pw.println(e + " <|-- " + t.name);
-                    }
-                }
-                for (String i : t.implementsTypes) {
-                    if (types.containsKey(i)) {
-                        pw.println(i + " <|.. " + t.name);
-                    }
-                }
-            }
-
-            // Associations
-            for (TypeInfo t : types.values()) {
-                for (String f : t.fieldsToTypes) {
-                    if (types.containsKey(f) && !f.equals(t.name)) {
-                        pw.println(t.name + " --> " + f);
-                    }
-                }
-            }
+            writeRelationships(pw, types);
 
             pw.println();
             pw.println("left to right direction");
@@ -203,91 +224,142 @@ public class GenerateClassDiagram {
             addFooter(pw);
 
             pw.println("@enduml");
+        } catch (IOException e) {
+            logger.log(Level.WARNING, () -> "Error writing diagram file: " + e.getLocalizedMessage());
         }
     }
 
+    /**
+     * 
+     * @param src
+     * @param types
+     * @throws IOException
+     */
     private static void scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
         List<Path> files = new ArrayList<>();
+        scanJavaSources(src, files);
+
+        for (Path p : files) {
+            scanSource(types, p);
+        }
+    }
+
+    /**
+     * 
+     * @param types
+     * @param p
+     * @throws IOException
+     */
+    private static void scanSource(Map<String, TypeInfo> types, Path p) throws IOException {
+        String code = Files.readString(p);
+        CompilationUnit cu;
+        try {
+            cu = StaticJavaParser.parse(code);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, () -> "Parser fail: " + p + " (" + e.getMessage() + ")");
+            return;
+        }
+
+        String pkg = cu.getPackageDeclaration().map(pd -> pd.getName().toString()).orElse("");
+
+        for (TypeDeclaration<?> td : cu.getTypes()) {
+            scanType(types, pkg, td);
+        }
+    }
+
+    /**
+     * 
+     * @param types
+     * @param pkg
+     * @param td
+     */
+    private static void scanType(Map<String, TypeInfo> types, String pkg, TypeDeclaration<?> td) {
+        if (!(td instanceof ClassOrInterfaceDeclaration
+                || td instanceof com.github.javaparser.ast.body.EnumDeclaration
+                || td instanceof com.github.javaparser.ast.body.RecordDeclaration))
+            return;
+        TypeInfo info = new TypeInfo();
+        info.pkg = pkg;
+
+        if (td instanceof com.github.javaparser.ast.body.EnumDeclaration ed) {
+            info.name = ed.getNameAsString();
+            info.kind = Kind.ENUM;
+        } else if (td instanceof com.github.javaparser.ast.body.RecordDeclaration rd) {
+            info.name = rd.getNameAsString();
+            info.kind = Kind.RECORD;
+        } else if (td instanceof ClassOrInterfaceDeclaration cid) {
+            info.name = cid.getNameAsString();
+            info.kind = Kind.CLASS;
+            if (cid.isInterface()) {
+                info.kind = Kind.INTERFACE;
+            }
+            // extends / implements
+            for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
+                info.extendsTypes.add(simpleName(ext.getNameAsString()));
+            }
+            for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
+                info.implementsTypes.add(simpleName(impl.getNameAsString()));
+            }
+
+            // fields -> association candidates
+            for (FieldDeclaration fd : cid.getFields()) {
+                String t = fd.getElementType().asString();
+                // tira generics e arrays simples
+                t = t.replaceAll("<.*>", "").replace("[]", "");
+                info.fieldsToTypes.add(simpleName(t));
+            }
+
+            // methods
+            for (MethodDeclaration method : cid.getMethods()) {
+                if (!method.isPublic())
+                    continue;
+
+                String returnType = method.getType().asString();
+                String name = method.getNameAsString();
+
+                String params = method.getParameters().stream()
+                        .map(param -> param.getNameAsString() + " : " + param.getType().asString())
+                        .collect(Collectors.joining(", "));
+
+                String flags = "";
+                flags = getFlags(method, flags);
+
+                String signature = "+ " + name + "(" + params + ") : " + returnType + flags;
+                info.methods.add(signature);
+            }
+        }
+        types.put(info.name, info);
+    }
+
+    /**
+     * 
+     * @param src
+     * @param files
+     */
+    private static void scanJavaSources(Path src, List<Path> files) {
         if (Files.exists(src)) {
             try (var s = Files.walk(src)) {
                 s.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
-            }
-        }
-
-        for (Path p : files) {
-            String code = Files.readString(p);
-            CompilationUnit cu;
-            try {
-                cu = StaticJavaParser.parse(code);
             } catch (Exception e) {
-                logger.log(Level.WARNING, () -> "Parser fail: " + p + " (" + e.getMessage() + ")");
-                continue;
-            }
-
-            String pkg = cu.getPackageDeclaration().map(pd -> pd.getName().toString()).orElse("");
-
-            for (TypeDeclaration<?> td : cu.getTypes()) {
-                if (!(td instanceof ClassOrInterfaceDeclaration
-                        || td instanceof com.github.javaparser.ast.body.EnumDeclaration
-                        || td instanceof com.github.javaparser.ast.body.RecordDeclaration))
-                    continue;
-                TypeInfo info = new TypeInfo();
-                info.pkg = pkg;
-
-                if (td instanceof com.github.javaparser.ast.body.EnumDeclaration ed) {
-                    info.name = ed.getNameAsString();
-                    info.kind = Kind.ENUM;
-                } else if (td instanceof com.github.javaparser.ast.body.RecordDeclaration rd) {
-                    info.name = rd.getNameAsString();
-                    info.kind = Kind.RECORD;
-                } else if (td instanceof ClassOrInterfaceDeclaration cid) {
-                    info.name = cid.getNameAsString();
-                    info.kind = Kind.CLASS;
-                    if (cid.isInterface()) {
-                        info.kind = Kind.INTERFACE;
-                    }
-                    // extends / implements
-                    for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
-                        info.extendsTypes.add(simpleName(ext.getNameAsString()));
-                    }
-                    for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
-                        info.implementsTypes.add(simpleName(impl.getNameAsString()));
-                    }
-
-                    // fields -> association candidates
-                    for (FieldDeclaration fd : cid.getFields()) {
-                        String t = fd.getElementType().asString();
-                        // tira generics e arrays simples
-                        t = t.replaceAll("<.*>", "").replace("[]", "");
-                        info.fieldsToTypes.add(simpleName(t));
-                    }
-
-                    for (MethodDeclaration method : cid.getMethods()) {
-                        if (!method.isPublic())
-                            continue;
-
-                        String returnType = method.getType().asString();
-                        String name = method.getNameAsString();
-
-                        String params = method.getParameters().stream()
-                                .map(param -> param.getNameAsString() + " : " + param.getType().asString())
-                                .collect(Collectors.joining(", "));
-
-                        String flags = "";
-                        if (method.isStatic())
-                            flags += " {static}";
-                        if (method.isAbstract())
-                            flags += " {abstract}";
-                        if (method.isFinal())
-                            flags += " {final}";
-
-                        String signature = "+ " + name + "(" + params + ") : " + returnType + flags;
-                        info.methods.add(signature);
-                    }
-                }
-                types.put(info.name, info);
+                logger.log(Level.WARNING, () -> "Error walking source folder: " + e.getMessage());
             }
         }
+    }
+
+    /**
+     * 
+     * @param method
+     * @param flags
+     * @return
+     */
+    private static String getFlags(MethodDeclaration method, String flags) {
+        if (method.isStatic())
+            flags += " {static}";
+        if (method.isAbstract())
+            flags += " {abstract}";
+        if (method.isFinal())
+            flags += " {final}";
+        return flags;
     }
 
     /**
