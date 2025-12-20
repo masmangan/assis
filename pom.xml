@@ -22,6 +22,9 @@
   </licenses>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
     <maven.compiler.release>17</maven.compiler.release>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
     <sonar.organization>masmangan</sonar.organization>
@@ -104,6 +107,12 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
+
+    <plugin>
+      <groupId>org.sonarsource.scanner.maven</groupId>
+      <artifactId>sonar-maven-plugin</artifactId>
+      <version>5.5.0.6356</version>
+    </plugin>
 
       <plugin>
         <groupId>org.jacoco</groupId>
