@@ -316,7 +316,6 @@ public class GenerateClassDiagram {
                 || td instanceof com.github.javaparser.ast.body.EnumDeclaration
                 || td instanceof com.github.javaparser.ast.body.RecordDeclaration))
             return;
-
         TypeInfo info = new TypeInfo();
         info.pkg = pkg;
 
