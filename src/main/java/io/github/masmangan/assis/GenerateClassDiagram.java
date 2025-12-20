@@ -83,7 +83,7 @@ public class GenerateClassDiagram {
      * 
      * @throws Exception
      */
-    public static void generate() throws Exception {
+    public static void generate() throws IOException {
         Path src = Paths.get("src/main/java");
         Path out = Paths.get("docs/uml/class-diagram.puml");
         Files.createDirectories(out.getParent());
@@ -97,7 +97,7 @@ public class GenerateClassDiagram {
      * @param out output path
      * @throws Exception
      */
-    public static void generate(Path src, Path out) throws Exception {
+    public static void generate(Path src, Path out) throws IOException {
         logger.log(Level.INFO, () -> "ASSIS " + versionOrDev() + " (Java -> UML)");
 
         ParserConfiguration config = new ParserConfiguration();
@@ -110,48 +110,69 @@ public class GenerateClassDiagram {
         scanSources(src, types);
 
         logger.log(Level.INFO, () -> "Writing " + out);
-
         writeDiagram(out, types);
+    }
 
-        
+    /**
+     * 
+     */
+    private static void addHeader(PrintWriter pw) {
+        pw.println("@startuml class-diagram");
+        pw.println("hide empty members");
+        pw.println("!theme blueprint");
+    }
+
+    /**
+     * 
+     */
+    private static String getClassifier(TypeInfo t) {
+        String classifier = "class " + t.name + " {";
+
+        if (t.kind == Kind.INTERFACE) {
+            classifier = "interface " + t.name + " {";
+        } else if (t.kind == Kind.RECORD) {
+            classifier = "class " + t.name + " <<record>> {";
+        } else if (t.kind == Kind.ENUM) {
+            classifier = "enum " + t.name + " {";
+        }
+
+        return classifier;
+    }
+
+    /**
+     * 
+     */
+    private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg) throws IOException {
+        for (var entry : byPkg.entrySet()) {
+            String pkg = entry.getKey();
+            if (!pkg.isEmpty())
+                pw.println("package \"" + pkg + "\" {");
+            for (TypeInfo t : entry.getValue()) {
+
+                String classifier = getClassifier(t);
+                pw.println(classifier);
+
+                for (String m : t.methods) {
+                    pw.println("  " + m);
+                }
+                pw.println("}");
+            }
+
+            if (!pkg.isEmpty())
+                pw.println("}");
+        }
+
     }
 
     private static void writeDiagram(Path out, Map<String, TypeInfo> types) throws IOException {
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
-            pw.println("@startuml class-diagram");
-            // pw.println("skinparam classAttributeIconSize 0");
-            pw.println("hide empty members");
-            pw.println("!theme blueprint");
+            addHeader(pw);
 
             // packages
             Map<String, List<TypeInfo>> byPkg = types.values().stream()
                     .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
-
-            for (var entry : byPkg.entrySet()) {
-                String pkg = entry.getKey();
-                if (!pkg.isEmpty())
-                    pw.println("package \"" + pkg + "\" {");
-                for (TypeInfo t : entry.getValue()) {
-                    if (t.kind == Kind.INTERFACE) {
-                        pw.println("interface " + t.name + "{");
-                    } else if (t.kind == Kind.CLASS) {
-                        pw.println("class " + t.name + "{");
-                    } else if (t.kind == Kind.RECORD) {
-                        pw.println("class " + t.name + " <<record>> { ");
-                    } else if (t.kind == Kind.ENUM) {
-                        pw.println("enum " + t.name + " {");
-                    }
-
-                    for (String m : t.methods) {
-                        pw.println("  " + m);
-                    }
-                    pw.println("}");
-                }
-
-                if (!pkg.isEmpty())
-                    pw.println("}");
-            }
+            writePackages(pw, byPkg);
 
             // Extends and implements
             for (TypeInfo t : types.values()) {
