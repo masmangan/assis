@@ -1,7 +1,7 @@
-[![SonarCloud analysis](https://github.com/masmangan/javaparser-to-plantuml/actions/workflows/sonarcloud.yml/badge.svg)](https://github.com/masmangan/javaparser-to-plantuml/actions/workflows/sonarcloud.yml)
-[![CodeQL Advanced](https://github.com/masmangan/javaparser-to-plantuml/actions/workflows/codeql.yml/badge.svg)](https://github.com/masmangan/javaparser-to-plantuml/actions/workflows/codeql.yml)
+[![SonarCloud analysis](https://github.com/masmangan/assis/actions/workflows/sonarcloud.yml/badge.svg)](https://github.com/masmangan/assis/actions/workflows/sonarcloud.yml)
+[![CodeQL Advanced](https://github.com/masmangan/assis/actions/workflows/codeql.yml/badge.svg)](https://github.com/masmangan/assis/actions/workflows/codeql.yml)
 
-# javaparser-to-plantuml
+# ASSIS
 Generate a UML diagram from Java code, using Java Parser and PlantUML
 
 
@@ -10,22 +10,22 @@ Generate a UML diagram from Java code, using Java Parser and PlantUML
 ### Get the latest version
 
 Download the latest release at: 
-https://github.com/masmangan/javaparser-to-plantuml/releases
+https://github.com/masmangan/assis/releases
 
 ### Place the jar and run ASSIS
 
 ASSIS is the assistant that will scan your source folder for .java files and generate a class-diagram.puml.
 
-For instance, for version v0.1.0:
+For instance, for version v0.3.0:
 
-Get the file at https://github.com/masmangan/javaparser-to-plantuml/releases/download/v0.1.0/assis.jar
+Get the file at https://github.com/masmangan/assis/releases/download/v0.3.0/assis-0.3.0.jar
 
 Place the jar at the project root folder.
 
 Run ASSIS at command line:
 
 ```bash
-java -jar assis.jar
+java -jar assis-0.3.0.jar
 ```
 
 Get the class-diagram.puml.
@@ -43,7 +43,7 @@ mvn -DskipTests package
 ### Run with Jar
 
 ```bash
-java -jar target/assis-0.1.0.jar
+java -jar target/assis-0.3.0.jar
 ```
 
 ### Run with Maven
@@ -53,7 +53,7 @@ mvn -q -DskipTests exec:java -Dexec.mainClass=io.github.masmangan.assis.AssisApp
 
 ## ASSIS Classes Overview
 
-![Assis](http://www.plantuml.com/plantuml/proxy?cache=no&fmt=svg&src=https://raw.githubusercontent.com/masmangan/javaparser-to-plantuml/refs/heads/main/docs/uml/class-diagram.puml)
+![Assis](http://www.plantuml.com/plantuml/proxy?cache=no&fmt=svg&src=https://raw.githubusercontent.com/masmangan/assis/refs/heads/main/docs/uml/class-diagram.puml)
 
 ## License
 
