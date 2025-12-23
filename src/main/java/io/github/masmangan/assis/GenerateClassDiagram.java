@@ -111,7 +111,7 @@ public class GenerateClassDiagram {
     static class TypeInfo {
         String pkg;
         String name;
-        String fqn; 
+        String fqn;
         Kind kind = Kind.CLASS;
         EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
         boolean jpaEntity = false;
@@ -120,8 +120,8 @@ public class GenerateClassDiagram {
         Set<String> implementsTypes = new LinkedHashSet<>();
         Set<FieldRef> fields = new LinkedHashSet<>();
         Set<MethodRef> methods = new LinkedHashSet<>();
-        public TypeDeclaration<?> td;
-        public CompilationUnit cu;
+        TypeDeclaration<?> td;
+        CompilationUnit cu;
     }
 
     /**
@@ -163,10 +163,10 @@ public class GenerateClassDiagram {
         Map<String, TypeInfo> types = new HashMap<>();
 
         logger.log(Level.INFO, () -> "Scanning " + src);
-        SourceRoot root = scanSources(src, types);
+        scanSources(src, types);
 
         logger.log(Level.INFO, () -> "Writing " + out);
-        writeDiagram(out, types, root);
+        writeDiagram(out, types);
     }
 
     /**
@@ -237,8 +237,7 @@ public class GenerateClassDiagram {
      * @param root
      * @throws IOException
      */
-    private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg, Map<String, TypeInfo> types,
-            SourceRoot root) {
+    private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg, Map<String, TypeInfo> types) {
         for (var entry : byPkg.entrySet()) {
             String pkg = entry.getKey();
 
@@ -252,7 +251,7 @@ public class GenerateClassDiagram {
 
                 writeFields(pw, types, t);
 
-                writeMethods(pw, types, t);
+                writeMethods(pw, t);
 
                 pw.println("}");
             }
@@ -264,16 +263,16 @@ public class GenerateClassDiagram {
 
     }
 
-    private static void writeMethods(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
+    private static void writeMethods(PrintWriter pw, TypeInfo t) {
         for (MethodRef m : t.methods) {
-       String returnType = m.method.getType().asString();
-        String name = m.method.getNameAsString();
+            String returnType = m.method.getType().asString();
+            String name = m.method.getNameAsString();
 
-        String params = m.method.getParameters().stream()
-                .map(param -> param.getNameAsString() + " : " + param.getType().asString())
-                .collect(Collectors.joining(", "));
+            String params = m.method.getParameters().stream()
+                    .map(param -> param.getNameAsString() + " : " + param.getType().asString())
+                    .collect(Collectors.joining(", "));
 
-        String flags = getFlags(m.method);
+            String flags = getFlags(m.method);
             String vis = getVisibility(m);
 
             pw.println("  " + vis + " " + name + "(" + params + ") : " + returnType + flags);
@@ -288,7 +287,7 @@ public class GenerateClassDiagram {
      * @param root
      * @throws IOException
      */
-    private static void writeRelationships(PrintWriter pw, Map<String, TypeInfo> types, SourceRoot root) {
+    private static void writeRelationships(PrintWriter pw, Map<String, TypeInfo> types) {
         // Extends and implements
         for (TypeInfo t : types.values()) {
             writeExtends(pw, types, t);
@@ -310,10 +309,10 @@ public class GenerateClassDiagram {
      */
     private static void writeAssociations(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (FieldRef fr : t.fields) {
-        String assocFqn = assocTypeFrom(types, t, fr.fd, fr.vd);
+            String assocFqn = assocTypeFrom(types, t, fr.vd);
             if (assocFqn != null) {
                 pw.println("\"" + t.fqn + "\" --> \"" + assocFqn + "\" : " + fr.vd.getNameAsString());
-             }
+            }
         }
     }
 
@@ -322,18 +321,20 @@ public class GenerateClassDiagram {
     }
 
     private static String assocTypeFrom(Map<String, TypeInfo> types, TypeInfo owner,
-                                        FieldDeclaration fd, com.github.javaparser.ast.body.VariableDeclarator vd) {
+            com.github.javaparser.ast.body.VariableDeclarator vd) {
         String raw = vd.getType().asString(); // better than fd.getElementType() for weird cases
         raw = raw.replaceAll("<.*>", "").replace("[]", "").trim();
         String resolved = resolveTypeName(types, owner, raw);
-        if (resolved == null) return null;
-        if (resolved.equals(owner.fqn)) return null;
+        if (resolved == null)
+            return null;
+        if (resolved.equals(owner.fqn))
+            return null;
         return resolved;
     }
 
     private static void writeFields(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (FieldRef fr : t.fields) {
-           if (assocTypeFrom(types, t, fr.fd, fr.vd) != null) {
+            if (assocTypeFrom(types, t, fr.vd) != null) {
                 continue; // keep current behavior: association instead of attribute
             }
 
@@ -361,23 +362,23 @@ public class GenerateClassDiagram {
     }
 
     private static String getVisibility(FieldRef fr) {
-        String vis = switch (fr.fd.getAccessSpecifier()) {
+        return switch (fr.fd.getAccessSpecifier()) {
             case PUBLIC -> "+";
             case PROTECTED -> "#";
             case PRIVATE -> "-";
             default -> "~";
         };
-        return vis;
     }
+
     private static String getVisibility(MethodRef fr) {
-        String vis = switch (fr.method.getAccessSpecifier()) {
+        return switch (fr.method.getAccessSpecifier()) {
             case PUBLIC -> "+";
             case PROTECTED -> "#";
             case PRIVATE -> "-";
             default -> "~";
         };
-        return vis;
     }
+
     /**
      * Writes implements relationships.
      * 
@@ -390,8 +391,8 @@ public class GenerateClassDiagram {
             String target = resolveTypeName(types, t, i);
             if (target != null) {
                 pw.println("\"" + target + "\" <|.. \"" + t.fqn + "\"");
+            }
         }
-    }
     }
 
     /**
@@ -406,8 +407,8 @@ public class GenerateClassDiagram {
             String target = resolveTypeName(types, t, e);
             if (target != null) {
                 pw.println("\"" + target + "\" <|-- \"" + t.fqn + "\"");
+            }
         }
-    }
     }
 
     /**
@@ -417,7 +418,7 @@ public class GenerateClassDiagram {
      * @param types
      * @param root
      */
-    private static void writeDiagram(Path out, Map<String, TypeInfo> types, SourceRoot root) {
+    private static void writeDiagram(Path out, Map<String, TypeInfo> types) {
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
             addHeader(pw);
@@ -426,9 +427,9 @@ public class GenerateClassDiagram {
             Map<String, List<TypeInfo>> byPkg = types.values().stream()
                     .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
 
-            writePackages(pw, byPkg, types, root);
+            writePackages(pw, byPkg, types);
 
-            writeRelationships(pw, types, root);
+            writeRelationships(pw, types);
 
             pw.println();
             pw.println("left to right direction");
@@ -441,10 +442,10 @@ public class GenerateClassDiagram {
         }
     }
 
-    private static SourceRoot scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
+    private static void scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
         if (!Files.exists(src)) {
             logger.log(Level.WARNING, () -> "Source folder does not exist: " + src);
-            return null;
+            return;
         }
 
         SourceRoot root = new SourceRoot(src);
@@ -465,7 +466,6 @@ public class GenerateClassDiagram {
             });
         }
 
-        return root;
     }
 
     /**
@@ -536,7 +536,6 @@ public class GenerateClassDiagram {
 
         // methods
         for (MethodDeclaration method : cid.getMethods()) {
-            // String signature = scanMethod(method);
             info.methods.add(new MethodRef(method));
         }
     }
@@ -593,19 +592,23 @@ public class GenerateClassDiagram {
         int lt = qname.lastIndexOf('.');
         return (lt >= 0) ? qname.substring(lt + 1) : qname;
     }
+
     /**
      * Resolve a type name to an FQN key in {@code types}.
      *
      * Minimal resolver (good enough for shadowing + most small projects):
-     *  1) if name is already qualified and exists -> return it
-     *  2) try same package (owner.pkg + "." + simple) -> if exists, return it
-     *  3) try unique match by simple name across known project types -> if unique, return it
-     *  otherwise return null (unresolved / external)
+     * 1) if name is already qualified and exists -> return it
+     * 2) try same package (owner.pkg + "." + simple) -> if exists, return it
+     * 3) try unique match by simple name across known project types -> if unique,
+     * return it
+     * otherwise return null (unresolved / external)
      */
     private static String resolveTypeName(Map<String, TypeInfo> types, TypeInfo owner, String name) {
-        if (name == null) return null;
+        if (name == null)
+            return null;
         String raw = name.trim();
-        if (raw.isEmpty()) return null;
+        if (raw.isEmpty())
+            return null;
 
         // Already-qualified?
         if (raw.contains(".") && types.containsKey(raw)) {
