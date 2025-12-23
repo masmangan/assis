@@ -31,7 +31,8 @@
 hs_err_pid*
 replay_pid*
 
-
+# ASSIS SVG output
+/docs/diagrams/out/
 
 # OS
 .DS_Store
