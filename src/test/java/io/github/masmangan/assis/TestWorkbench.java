@@ -87,4 +87,11 @@ static String generatePumlFromSample(String resourcePath, Path tempDir, String t
         assertFalse(puml.contains(fragment),
                 "Expected generated PlantUML to contain " + fragment + ". Content:\n" + puml);
     }
+
+    static void assertPumlContainsName(String puml, String name) {
+    assertTrue(
+        puml.contains(name) || puml.contains("\"" + name + "\""),
+        "Expected diagram to contain name: " + name
+    );
+}
 }
