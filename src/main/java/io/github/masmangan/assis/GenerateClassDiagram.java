@@ -104,7 +104,6 @@ public class GenerateClassDiagram {
         Set<String> extendsTypes = new LinkedHashSet<>();
         Set<String> implementsTypes = new LinkedHashSet<>();
         Set<FieldRef> fields = new LinkedHashSet<>();
-        // Set<String> fieldsToTypes = new LinkedHashSet<>();
         Set<String> methods = new LinkedHashSet<>();
     }
 
@@ -194,7 +193,7 @@ public class GenerateClassDiagram {
             } else {
                 classifier = "class " + t.name;
                 if (t.jpaEntity) {
-                    classifier += " <<Entity>> ";
+                    classifier += " <<Entity>>";
                 }
             }
             classifier += " {";
