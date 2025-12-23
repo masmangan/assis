@@ -3,7 +3,7 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package samples.Hello.java;
+package samples.hello;
 
 public class Hello {
     public static void main(String[] args) {
