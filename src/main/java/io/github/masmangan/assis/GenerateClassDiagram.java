@@ -52,7 +52,8 @@ enum Modifier {
 }
 
 /**
- * The {@code GenerateClassDiagram} class is a PlantUML Language class diagram generator.
+ * The {@code GenerateClassDiagram} class is a PlantUML Language class diagram
+ * generator.
  */
 public class GenerateClassDiagram {
 
@@ -60,7 +61,7 @@ public class GenerateClassDiagram {
      * Default documentation path.
      */
     private static final String DOCS_UML_CLASS_DIAGRAM_PUML = "docs/uml/class-diagram.puml";
- 
+
     /**
      * Default source path.
      */
@@ -78,6 +79,19 @@ public class GenerateClassDiagram {
     }
 
     /**
+     * 
+     */
+    static class FieldRef {
+        final String name;
+        final String type;
+
+        FieldRef(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+    }
+
+    /**
      * Symbol table entry
      */
     static class TypeInfo {
@@ -85,11 +99,12 @@ public class GenerateClassDiagram {
         String name;
         Kind kind = Kind.CLASS;
         EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
+        boolean jpaEntity = false;
 
         Set<String> extendsTypes = new LinkedHashSet<>();
         Set<String> implementsTypes = new LinkedHashSet<>();
-
-        Set<String> fieldsToTypes = new LinkedHashSet<>();
+        Set<FieldRef> fields = new LinkedHashSet<>();
+        // Set<String> fieldsToTypes = new LinkedHashSet<>();
         Set<String> methods = new LinkedHashSet<>();
     }
 
@@ -124,7 +139,7 @@ public class GenerateClassDiagram {
      */
     public static void generate(Path src, Path out) throws IOException {
         logger.log(Level.INFO, () -> assisLine());
- 
+
         ParserConfiguration config = new ParserConfiguration();
         config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
         StaticJavaParser.setConfiguration(config);
@@ -170,15 +185,19 @@ public class GenerateClassDiagram {
      * @return
      */
     private static String getClassifier(TypeInfo t) {
-        String classifier = "**error at classifier**  {";
+        String classifier = "**error at classifier**";
         if (t.kind == Kind.CLASS) {
             if (t.modifiers.contains(Modifier.ABSTRACT)) {
-                classifier = "abstract class " + t.name + " {";
+                classifier = "abstract class " + t.name;
             } else if (t.modifiers.contains(Modifier.FINAL)) {
-                classifier = "class " + t.name + " <<final>>  {";
+                classifier = "class " + t.name + " <<final>>";
             } else {
-                classifier = "class " + t.name + " {";
+                classifier = "class " + t.name;
+                if (t.jpaEntity) {
+                    classifier += " <<Entity>> ";
+                }
             }
+            classifier += " {";
         } else if (t.kind == Kind.INTERFACE) {
             classifier = "interface " + t.name + " {";
         } else if (t.kind == Kind.RECORD) {
@@ -253,9 +272,9 @@ public class GenerateClassDiagram {
      * @param t
      */
     private static void writeAssociations(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
-        for (String f : t.fieldsToTypes) {
-            if (types.containsKey(f) && !f.equals(t.name)) {
-                pw.println(t.name + " --> " + f);
+        for (FieldRef fr : t.fields) {
+            if (types.containsKey(fr.type) && !fr.type.equals(t.name)) {
+                pw.println(t.name + " --> " + fr.type + " : " + fr.name);
             }
         }
     }
@@ -416,6 +435,8 @@ public class GenerateClassDiagram {
             } else if (cid.isFinal()) {
                 info.modifiers.add(Modifier.FINAL);
             }
+            info.jpaEntity = cid.getAnnotations().stream()
+                    .anyMatch(a -> a.getNameAsString().equals("Entity"));
         }
 
         // extends
@@ -428,10 +449,11 @@ public class GenerateClassDiagram {
             info.implementsTypes.add(simpleName(impl.getNameAsString()));
         }
 
-        // fields -> association candidates
         for (FieldDeclaration fd : cid.getFields()) {
-            String t = scanField(fd);
-            info.fieldsToTypes.add(simpleName(t));
+            String type = simpleName(scanField(fd));
+            for (var v : fd.getVariables()) {
+                info.fields.add(new FieldRef(v.getNameAsString(), type));
+            }
         }
 
         // methods

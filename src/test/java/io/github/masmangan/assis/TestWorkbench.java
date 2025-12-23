@@ -6,6 +6,7 @@
 package io.github.masmangan.assis;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -79,6 +80,11 @@ static String generatePumlFromSample(String resourcePath, Path tempDir, String t
 
     static void assertPumlContains(String puml, String fragment) {
         assertTrue(puml.contains(fragment),
+                "Expected generated PlantUML to contain " + fragment + ". Content:\n" + puml);
+    }
+
+    static void assertPumlNotContains(String puml, String fragment) {
+        assertFalse(puml.contains(fragment),
                 "Expected generated PlantUML to contain " + fragment + ". Content:\n" + puml);
     }
 }

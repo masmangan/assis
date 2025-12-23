@@ -5,7 +5,7 @@ hide empty members
 !pragma useIntermediatePackages false
 
 package "io.github.masmangan.assis" {
-class AssisApp <<final>>  {
+class AssisApp <<final>> {
   + main(args : String[]) : void {static}
 }
 class GenerateClassDiagram {
@@ -21,7 +21,7 @@ enum Modifier {
 left to right direction
 
 center footer
-Generated with ASSIS (Java -> UML) at 2025-12-21T19:34:27Z
+Generated with ASSIS (Java -> UML) at 2025-12-23T00:32:37Z
 https://github.com/masmangan/assis
 end footer
 
