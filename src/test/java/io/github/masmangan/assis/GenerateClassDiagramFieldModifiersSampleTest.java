@@ -1,6 +1,7 @@
 package io.github.masmangan.assis;
 
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 import java.nio.file.Path;
 
@@ -18,7 +19,7 @@ class GenerateClassDiagramFieldModifiersSampleTest {
                 tempDir,
                 "fmodifiers");
 
-        assertPumlContains(puml, "class FieldModifiersSample");
+        assertPumlContainsClass(puml, "samples.fmodifiers.FieldModifiersSample");
         assertPumlContains(puml, "counter");
                 assertPumlContains(puml, "int");
 

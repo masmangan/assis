@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 class GenerateClassDiagramHelloSampleTest {
 
@@ -23,7 +24,7 @@ class GenerateClassDiagramHelloSampleTest {
                 "samples/hello",
                 tempDir,
                 "hello");
-        assertPumlContains(puml, "class Hello");
+        assertPumlContainsClass(puml, "samples.hello.Hello");
         assertPumlContains(puml, "main");
     }
 

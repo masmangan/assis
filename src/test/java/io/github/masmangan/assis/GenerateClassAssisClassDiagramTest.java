@@ -5,7 +5,7 @@
 
 package io.github.masmangan.assis;
 
-import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,8 +28,8 @@ class GenerateClassAssisClassDiagramTest {
 
                 String content = Files.readString(output);
 
-                assertPumlContains(content, "class AssisApp");
+                assertPumlContainsClass(content, "io.github.masmangan.assis.AssisApp");
 
-                assertPumlContains(content, "class GenerateClassDiagram");
+                assertPumlContainsClass(content, "io.github.masmangan.assis.GenerateClassDiagram");
         }
 }

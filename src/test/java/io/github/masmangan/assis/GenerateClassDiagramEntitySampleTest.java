@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 class GenerateClassDiagramEntitySampleTest {
     @TempDir
@@ -18,7 +19,7 @@ class GenerateClassDiagramEntitySampleTest {
                 tempDir,
                 "entity");
 
-        assertPumlContains(puml, "class Owner");
+        assertPumlContainsClass(puml, "Owner");
         assertPumlContains(puml,"<<Entity>>");
     }
 }

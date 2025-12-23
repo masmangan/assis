@@ -111,6 +111,7 @@ public class GenerateClassDiagram {
     static class TypeInfo {
         String pkg;
         String name;
+        String fqn; 
         Kind kind = Kind.CLASS;
         EnumSet<Modifier> modifiers = EnumSet.noneOf(Modifier.class);
         boolean jpaEntity = false;
@@ -203,24 +204,24 @@ public class GenerateClassDiagram {
         String classifier = "**error at classifier**";
         if (t.kind == Kind.CLASS) {
             if (t.modifiers.contains(Modifier.ABSTRACT)) {
-                classifier = "abstract class " + t.name;
+                classifier = "abstract class \"" + t.fqn + "\"";
             } else if (t.modifiers.contains(Modifier.FINAL)) {
-                classifier = "class " + t.name + " <<final>>";
+                classifier = "class \"" + t.fqn + "\"" + " <<final>>";
             } else {
-                classifier = "class " + t.name;
+                classifier = "class \"" + t.fqn + "\"";
                 if (t.jpaEntity) {
                     classifier += " <<Entity>>";
                 }
             }
             classifier += " {";
         } else if (t.kind == Kind.INTERFACE) {
-            classifier = "interface " + t.name + " {";
+            classifier = "interface \"" + t.fqn + "\"" + " {";
         } else if (t.kind == Kind.RECORD) {
-            classifier = "record " + t.name + " {";
+            classifier = "record \"" + t.fqn + "\"" + " {";
         } else if (t.kind == Kind.ENUM) {
-            classifier = "enum " + t.name + " {";
+            classifier = "enum \"" + t.fqn + "\"" + " {";
         } else if (t.kind == Kind.ANNOTATION) {
-            classifier = "annotation " + t.name + " {";
+            classifier = "annotation \"" + t.fqn + "\"" + " {";
         } else {
             logger.log(Level.WARNING, () -> "Unexpected type: " + t.toString());
         }
@@ -309,10 +310,10 @@ public class GenerateClassDiagram {
      */
     private static void writeAssociations(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (FieldRef fr : t.fields) {
-            String assocType = assocTypeFrom(fr.fd, fr.vd);
-            if (isAssociation(types, t, fr)) {
-                pw.println(t.name + " --> " + assocType + " : " + fr.vd.getNameAsString());
-            }
+        String assocFqn = assocTypeFrom(types, t, fr.fd, fr.vd);
+            if (assocFqn != null) {
+                pw.println("\"" + t.fqn + "\" --> \"" + assocFqn + "\" : " + fr.vd.getNameAsString());
+             }
         }
     }
 
@@ -320,20 +321,19 @@ public class GenerateClassDiagram {
         return vd.getType().asString();
     }
 
-    private static boolean isAssociation(Map<String, TypeInfo> types, TypeInfo t, FieldRef fr) {
-        String assocType = assocTypeFrom(fr.fd, fr.vd);
-        return types.containsKey(assocType) && !assocType.equals(t.name);
-    }
-
-    private static String assocTypeFrom(FieldDeclaration fd, com.github.javaparser.ast.body.VariableDeclarator vd) {
-        String s = vd.getType().asString(); // better than fd.getElementType() for weird cases
-        s = s.replaceAll("<.*>", "").replace("[]", "");
-        return simpleName(s);
+    private static String assocTypeFrom(Map<String, TypeInfo> types, TypeInfo owner,
+                                        FieldDeclaration fd, com.github.javaparser.ast.body.VariableDeclarator vd) {
+        String raw = vd.getType().asString(); // better than fd.getElementType() for weird cases
+        raw = raw.replaceAll("<.*>", "").replace("[]", "").trim();
+        String resolved = resolveTypeName(types, owner, raw);
+        if (resolved == null) return null;
+        if (resolved.equals(owner.fqn)) return null;
+        return resolved;
     }
 
     private static void writeFields(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (FieldRef fr : t.fields) {
-            if (isAssociation(types, t, fr)) {
+           if (assocTypeFrom(types, t, fr.fd, fr.vd) != null) {
                 continue; // keep current behavior: association instead of attribute
             }
 
@@ -387,10 +387,11 @@ public class GenerateClassDiagram {
      */
     private static void writeImplements(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (String i : t.implementsTypes) {
-            if (types.containsKey(i)) {
-                pw.println(i + " <|.. " + t.name);
-            }
+            String target = resolveTypeName(types, t, i);
+            if (target != null) {
+                pw.println("\"" + target + "\" <|.. \"" + t.fqn + "\"");
         }
+    }
     }
 
     /**
@@ -402,10 +403,11 @@ public class GenerateClassDiagram {
      */
     private static void writeExtends(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (String e : t.extendsTypes) {
-            if (types.containsKey(e)) {
-                pw.println(e + " <|-- " + t.name);
-            }
+            String target = resolveTypeName(types, t, e);
+            if (target != null) {
+                pw.println("\"" + target + "\" <|-- \"" + t.fqn + "\"");
         }
+    }
     }
 
     /**
@@ -458,7 +460,7 @@ public class GenerateClassDiagram {
                         .orElse("");
 
                 for (TypeDeclaration<?> td : cu.getTypes()) {
-                    scanType(types, pkg, td); // <-- reuse your existing logic
+                    scanType(types, cu, pkg, td); // <-- now stores FQN + CU
                 }
             });
         }
@@ -472,11 +474,12 @@ public class GenerateClassDiagram {
      * @param pkg
      * @param td
      */
-    private static void scanType(Map<String, TypeInfo> types, String pkg, TypeDeclaration<?> td) {
+    private static void scanType(Map<String, TypeInfo> types, CompilationUnit cu, String pkg, TypeDeclaration<?> td) {
 
         TypeInfo info = new TypeInfo();
         info.pkg = pkg;
-
+        info.cu = cu;
+        info.td = td;
         if (td instanceof com.github.javaparser.ast.body.EnumDeclaration ed) {
             info.name = ed.getNameAsString();
             info.kind = Kind.ENUM;
@@ -491,7 +494,8 @@ public class GenerateClassDiagram {
         } else {
             logger.log(Level.WARNING, () -> "Unexpected type: " + td.toString());
         }
-        types.put(info.name, info);
+        info.fqn = info.pkg == null || info.pkg.isEmpty() ? info.name : info.pkg + "." + info.name;
+        types.put(info.fqn, info);
     }
 
     /**
@@ -589,5 +593,45 @@ public class GenerateClassDiagram {
         int lt = qname.lastIndexOf('.');
         return (lt >= 0) ? qname.substring(lt + 1) : qname;
     }
+    /**
+     * Resolve a type name to an FQN key in {@code types}.
+     *
+     * Minimal resolver (good enough for shadowing + most small projects):
+     *  1) if name is already qualified and exists -> return it
+     *  2) try same package (owner.pkg + "." + simple) -> if exists, return it
+     *  3) try unique match by simple name across known project types -> if unique, return it
+     *  otherwise return null (unresolved / external)
+     */
+    private static String resolveTypeName(Map<String, TypeInfo> types, TypeInfo owner, String name) {
+        if (name == null) return null;
+        String raw = name.trim();
+        if (raw.isEmpty()) return null;
 
+        // Already-qualified?
+        if (raw.contains(".") && types.containsKey(raw)) {
+            return raw;
+        }
+
+        // Reduce to simple name for matching
+        String simple = simpleName(raw);
+
+        // Same package candidate (handles your JLS Other shadowing correctly)
+        String samePkg = (owner.pkg == null || owner.pkg.isEmpty()) ? simple : owner.pkg + "." + simple;
+        if (types.containsKey(samePkg)) {
+            return samePkg;
+        }
+
+        // Unique match across all known types
+        String suffix = "." + simple;
+        String found = null;
+        for (String key : types.keySet()) {
+            if (key.equals(simple) || key.endsWith(suffix)) {
+                if (found != null && !found.equals(key)) {
+                    return null; // ambiguous
+                }
+                found = key;
+            }
+        }
+        return found;
+    }
 }

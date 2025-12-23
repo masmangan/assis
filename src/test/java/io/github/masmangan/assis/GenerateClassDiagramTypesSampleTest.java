@@ -24,11 +24,11 @@ class GenerateClassDiagramTypesSampleTest {
                 tempDir,
                 "types");
 
-        assertPumlContains(puml, "class Class");
-        assertPumlContains(puml, "interface Interface");
-        assertPumlContains(puml, "enum Enumeration");
-        assertPumlContains(puml, "annotation Annotation");
-        assertPumlContains(puml, "record Record");
+        assertPumlContains(puml, "class \"samples.types.Class\"");
+        assertPumlContains(puml, "interface \"samples.types.Interface\"");
+        assertPumlContains(puml, "enum \"samples.types.Enumeration\"");
+        assertPumlContains(puml, "annotation \"samples.types.Annotation\"");
+        assertPumlContains(puml, "record \"samples.types.Record\"");
     }
 
 }

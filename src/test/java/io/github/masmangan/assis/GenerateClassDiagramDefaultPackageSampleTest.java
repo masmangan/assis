@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 import static io.github.masmangan.assis.TestWorkbench.assertPumlNotContains;
 
 class GenerateClassDiagramDefaultPackageSampleTest {
@@ -19,7 +19,7 @@ class GenerateClassDiagramDefaultPackageSampleTest {
                 tempDir,
                 "defaultpackage");
 
-        assertPumlContains(puml, "class Hello");
+        assertPumlContainsClass(puml, "Hello");
         assertPumlNotContains(puml, "package");
 
     }

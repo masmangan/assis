@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
 
 class GenerateClassDiagramAssociationSampleTest {
@@ -18,9 +19,9 @@ class GenerateClassDiagramAssociationSampleTest {
                 tempDir,
                 "association");
 
-        assertPumlContains(puml, "Order --> Customer : buyer");
-        assertPumlContains(puml, "class Order");
-        assertPumlContains(puml, "class Customer");
+        assertPumlContains(puml, "\"samples.association.Order\" --> \"samples.association.Customer\" : buyer");
+        assertPumlContainsClass(puml, "samples.association.Order");
+        assertPumlContainsClass(puml, "samples.association.Customer");
 
     }
 }

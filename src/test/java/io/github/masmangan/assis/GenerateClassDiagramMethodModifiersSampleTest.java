@@ -1,6 +1,7 @@
 package io.github.masmangan.assis;
 
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 import java.nio.file.Path;
 
@@ -18,11 +19,11 @@ class GenerateClassDiagramMethodModifiersSampleTest {
                 tempDir,
                 "mmodifiers");
 
-        assertPumlContains(puml, "class AbstractMethods");
+        assertPumlContainsClass(puml, "samples.mmodifiers.AbstractMethods");
         assertPumlContains(puml, "abstractMethod");
         assertPumlContains(puml, "{abstract}");
 
-        assertPumlContains(puml, "class ConcreteMethods");
+        assertPumlContainsClass(puml, "samples.mmodifiers.ConcreteMethods");
         assertPumlContains(puml, "finalMethod");
         assertPumlContains(puml, "{final}");
 

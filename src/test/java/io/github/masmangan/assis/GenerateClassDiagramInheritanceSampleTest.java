@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 class GenerateClassDiagramInheritanceSampleTest {
     @TempDir
@@ -24,14 +25,14 @@ class GenerateClassDiagramInheritanceSampleTest {
                 "inheritance");
 
         // types
-        assertPumlContains(puml, "interface A");
-        assertPumlContains(puml, "interface B");
-        assertPumlContains(puml, "class Base");
-        assertPumlContains(puml, "class Child");
+        assertPumlContains(puml, "interface \"samples.inheritance.A\"");
+        assertPumlContains(puml, "interface \"samples.inheritance.B\"");
+        assertPumlContainsClass(puml, "samples.inheritance.Base");
+        assertPumlContainsClass(puml, "samples.inheritance.Child");
 
         // relationships
-        assertPumlContains(puml, "A <|-- B");
-        assertPumlContains(puml, "Base <|-- Child");
-        assertPumlContains(puml, "B <|.. Child");
+        assertPumlContains(puml, "\"samples.inheritance.A\" <|-- \"samples.inheritance.B\"");
+        assertPumlContains(puml, "\"samples.inheritance.Base\" <|-- \"samples.inheritance.Child\"");
+        assertPumlContains(puml, "\"samples.inheritance.B\" <|.. \"samples.inheritance.Child\"");
     }
 }

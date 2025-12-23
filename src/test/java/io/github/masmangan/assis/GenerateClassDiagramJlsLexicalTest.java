@@ -7,13 +7,14 @@ package io.github.masmangan.assis;
 
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsPackage;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
-@Disabled("Incomplete test – to be finished in 0.5.0")
+// This test intentionally requires FQN resolution.
+// Removing FQN support must break this test.
 class GenerateClassDiagramJlsLexicalTest {
     @TempDir
     Path tempDir;
@@ -25,12 +26,12 @@ class GenerateClassDiagramJlsLexicalTest {
                 tempDir,
                 "lexical");
 
-        assertPumlContains(puml, "package testPackage");
-        assertPumlContains(puml, "package other");
+        assertPumlContainsPackage(puml, "testPackage");
+        assertPumlContainsPackage(puml, "other");
 
-        assertPumlContains(puml, "class \"testPackage.Test\"");
-        assertPumlContains(puml, "class \"testPackage.Other\"");
-        assertPumlContains(puml, "class \"other.Other\"");
+        assertPumlContainsClass(puml, "testPackage.Test");
+        assertPumlContainsClass(puml, "testPackage.Other");
+        assertPumlContainsClass(puml, "other.Other");
 
     }
 }
