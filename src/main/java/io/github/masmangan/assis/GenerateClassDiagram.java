@@ -16,7 +16,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -36,6 +35,8 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.utils.SourceRoot;
+import com.github.javaparser.ParseResult;
 
 /**
  * JLS Types.
@@ -79,15 +80,14 @@ public class GenerateClassDiagram {
     }
 
     /**
-     * 
      */
     static class FieldRef {
-        final String name;
-        final String type;
+        final FieldDeclaration fd;
+        final com.github.javaparser.ast.body.VariableDeclarator vd;
 
-        FieldRef(String name, String type) {
-            this.name = name;
-            this.type = type;
+        FieldRef(FieldDeclaration fd, com.github.javaparser.ast.body.VariableDeclarator vd) {
+            this.fd = fd;
+            this.vd = vd;
         }
     }
 
@@ -105,6 +105,8 @@ public class GenerateClassDiagram {
         Set<String> implementsTypes = new LinkedHashSet<>();
         Set<FieldRef> fields = new LinkedHashSet<>();
         Set<String> methods = new LinkedHashSet<>();
+        public TypeDeclaration<?> td;
+        public CompilationUnit cu;
     }
 
     /**
@@ -146,10 +148,10 @@ public class GenerateClassDiagram {
         Map<String, TypeInfo> types = new HashMap<>();
 
         logger.log(Level.INFO, () -> "Scanning " + src);
-        scanSources(src, types);
+        SourceRoot root = scanSources(src, types);
 
         logger.log(Level.INFO, () -> "Writing " + out);
-        writeDiagram(out, types);
+        writeDiagram(out, types, root);
     }
 
     /**
@@ -217,9 +219,11 @@ public class GenerateClassDiagram {
      * 
      * @param pw
      * @param byPkg
+     * @param root
      * @throws IOException
      */
-    private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg) {
+    private static void writePackages(PrintWriter pw, Map<String, List<TypeInfo>> byPkg, Map<String, TypeInfo> types,
+            SourceRoot root) {
         for (var entry : byPkg.entrySet()) {
             String pkg = entry.getKey();
 
@@ -230,9 +234,13 @@ public class GenerateClassDiagram {
             for (TypeInfo t : entry.getValue()) {
                 String classifier = getClassifier(t);
                 pw.println(classifier);
+
+                writeFields(pw, types, t);
+
                 for (String m : t.methods) {
                     pw.println("  " + m);
                 }
+
                 pw.println("}");
             }
 
@@ -248,9 +256,10 @@ public class GenerateClassDiagram {
      * 
      * @param pw
      * @param types
+     * @param root
      * @throws IOException
      */
-    private static void writeRelationships(PrintWriter pw, Map<String, TypeInfo> types) {
+    private static void writeRelationships(PrintWriter pw, Map<String, TypeInfo> types, SourceRoot root) {
         // Extends and implements
         for (TypeInfo t : types.values()) {
             writeExtends(pw, types, t);
@@ -272,9 +281,59 @@ public class GenerateClassDiagram {
      */
     private static void writeAssociations(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
         for (FieldRef fr : t.fields) {
-            if (types.containsKey(fr.type) && !fr.type.equals(t.name)) {
-                pw.println(t.name + " --> " + fr.type + " : " + fr.name);
+            String assocType = assocTypeFrom(fr.fd, fr.vd);
+            if (isAssociation(types, t, fr)) {
+                pw.println(t.name + " --> " + assocType + " : " + fr.vd.getNameAsString());
             }
+        }
+    }
+
+    private static String displayTypeFrom(com.github.javaparser.ast.body.VariableDeclarator vd) {
+        return vd.getType().asString();
+    }
+
+    private static boolean isAssociation(Map<String, TypeInfo> types, TypeInfo t, FieldRef fr) {
+        String assocType = assocTypeFrom(fr.fd, fr.vd);
+        return types.containsKey(assocType) && !assocType.equals(t.name);
+    }
+
+    private static String assocTypeFrom(FieldDeclaration fd, com.github.javaparser.ast.body.VariableDeclarator vd) {
+        String s = vd.getType().asString(); // better than fd.getElementType() for weird cases
+        s = s.replaceAll("<.*>", "").replace("[]", "");
+        return simpleName(s);
+    }
+
+    private static void writeFields(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
+        for (FieldRef fr : t.fields) {
+            if (isAssociation(types, t, fr)) {
+                continue; // keep current behavior: association instead of attribute
+            }
+
+            String name = fr.vd.getNameAsString();
+            String type = displayTypeFrom(fr.vd);
+
+            // PlantUML underline for static:
+            String staticPrefix = fr.fd.isStatic() ? "{static} " : "";
+
+            // visibility (optional now; easy to add)
+             String vis = switch (fr.fd.getAccessSpecifier()) {
+             case PUBLIC -> "+";
+             case PROTECTED -> "#";
+             case PRIVATE -> "-";
+             default -> "~";
+             };
+
+            List<String> mods = new ArrayList<>();
+            if (fr.fd.isFinal())
+                mods.add("final");
+            if (fr.fd.isTransient())
+                mods.add("transient");
+            if (fr.fd.isVolatile())
+                mods.add("volatile");
+
+            String modBlock = mods.isEmpty() ? "" : " {" + String.join(", ", mods) + "}";
+
+            pw.println("  " + vis + " " + staticPrefix + name + " : " + type + modBlock);
         }
     }
 
@@ -313,8 +372,9 @@ public class GenerateClassDiagram {
      * 
      * @param out
      * @param types
+     * @param root
      */
-    private static void writeDiagram(Path out, Map<String, TypeInfo> types) {
+    private static void writeDiagram(Path out, Map<String, TypeInfo> types, SourceRoot root) {
         // Generate PlantUML
         try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(out))) {
             addHeader(pw);
@@ -322,9 +382,10 @@ public class GenerateClassDiagram {
             // packages
             Map<String, List<TypeInfo>> byPkg = types.values().stream()
                     .collect(Collectors.groupingBy(t -> t.pkg == null ? "" : t.pkg));
-            writePackages(pw, byPkg);
 
-            writeRelationships(pw, types);
+            writePackages(pw, byPkg, types, root);
+
+            writeRelationships(pw, types, root);
 
             pw.println();
             pw.println("left to right direction");
@@ -337,57 +398,31 @@ public class GenerateClassDiagram {
         }
     }
 
-    /**
-     * Scans source code information.
-     * 
-     * @param src
-     * @param types
-     * @throws IOException
-     */
-    private static void scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
-        List<Path> files = new ArrayList<>();
-        scanJavaSources(src, files);
-
-        for (Path p : files) {
-            scanSource(types, p);
-        }
-    }
-
-    /**
-     * Gest compilation unit from source code.
-     * 
-     * @param code
-     * @return
-     */
-    private static CompilationUnit getCompilationUnit(String code) {
-        try {
-            return StaticJavaParser.parse(code);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, () -> "Parser fail:  " + e.getMessage() + ")");
+    private static SourceRoot scanSources(Path src, Map<String, TypeInfo> types) throws IOException {
+        if (!Files.exists(src)) {
+            logger.log(Level.WARNING, () -> "Source folder does not exist: " + src);
             return null;
         }
-    }
 
-    /**
-     * Scans package list from source code.
-     * 
-     * @param types
-     * @param p
-     * @throws IOException
-     */
-    private static void scanSource(Map<String, TypeInfo> types, Path p) throws IOException {
-        String code = Files.readString(p);
-        CompilationUnit cu = getCompilationUnit(code);
+        SourceRoot root = new SourceRoot(src);
+        root.getParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
 
-        String pkg = cu
-                .getPackageDeclaration()
-                .map(pd -> pd.getName()
-                        .toString())
-                .orElse("");
+        List<ParseResult<CompilationUnit>> results = root.tryToParse("");
 
-        for (TypeDeclaration<?> td : cu.getTypes()) {
-            scanType(types, pkg, td);
+        for (ParseResult<CompilationUnit> r : results) {
+            r.getResult().ifPresent(cu -> {
+
+                String pkg = cu.getPackageDeclaration()
+                        .map(pd -> pd.getNameAsString())
+                        .orElse("");
+
+                for (TypeDeclaration<?> td : cu.getTypes()) {
+                    scanType(types, pkg, td); // <-- reuse your existing logic
+                }
+            });
         }
+
+        return root;
     }
 
     /**
@@ -449,9 +484,8 @@ public class GenerateClassDiagram {
         }
 
         for (FieldDeclaration fd : cid.getFields()) {
-            String type = simpleName(scanField(fd));
             for (var v : fd.getVariables()) {
-                info.fields.add(new FieldRef(v.getNameAsString(), type));
+                info.fields.add(new FieldRef(fd, v));
             }
         }
 
@@ -464,18 +498,6 @@ public class GenerateClassDiagram {
             String signature = scanMethod(method);
             info.methods.add(signature);
         }
-    }
-
-    /**
-     * Scans field but removes generics and arrays.
-     * 
-     * @param fd
-     * @return
-     */
-    private static String scanField(FieldDeclaration fd) {
-        String t = fd.getElementType().asString();
-        t = t.replaceAll("<.*>", "").replace("[]", "");
-        return t;
     }
 
     /**
@@ -494,21 +516,6 @@ public class GenerateClassDiagram {
         String flags = getFlags(method);
 
         return "+ " + name + "(" + params + ") : " + returnType + flags;
-    }
-
-    /**
-     * 
-     * @param src
-     * @param files
-     */
-    private static void scanJavaSources(Path src, List<Path> files) {
-        if (Files.exists(src)) {
-            try (var s = Files.walk(src)) {
-                s.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, () -> "Error walking source folder: " + e.getMessage());
-            }
-        }
     }
 
     /**
