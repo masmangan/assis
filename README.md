@@ -16,16 +16,16 @@ https://github.com/masmangan/assis/releases
 
 ASSIS is the assistant that will scan your source folder for .java files and generate a class-diagram.puml.
 
-For instance, for version v0.3.0:
+For instance, for version v0.7.0:
 
-Get the file at https://github.com/masmangan/assis/releases/download/v0.3.0/assis-0.3.0.jar
+Get the file at https://github.com/masmangan/assis/releases/download/v0.7.0/assis-0.7.0.jar
 
 Place the jar at the project root folder.
 
 Run ASSIS at command line:
 
 ```bash
-java -jar assis-0.3.0.jar
+java -jar assis-0.7.0.jar
 ```
 
 Get the class-diagram.puml.
@@ -43,7 +43,7 @@ mvn -DskipTests package
 ### Run with Jar
 
 ```bash
-java -jar target/assis-0.3.0.jar
+java -jar target/assis-0.7.0.jar
 ```
 
 ### Run with Maven
