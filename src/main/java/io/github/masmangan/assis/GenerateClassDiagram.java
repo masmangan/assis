@@ -341,7 +341,6 @@ public class GenerateClassDiagram {
 
 			String vis = getVisibility(c);
 
-			// pw.println(" " + vis + " <<create>> " + name + "(" + params + ")");
 			pw.println("  " + vis + " <<create>> " + name + "(" + params + ")" + renderStereotypes(c.stereotypes));
 		}
 	}
@@ -471,7 +470,6 @@ public class GenerateClassDiagram {
 
 			String modBlock = mods.isEmpty() ? "" : " {" + String.join(", ", mods) + "}";
 
-			// pw.println(" " + vis + " " + staticPrefix + name + " : " + type + modBlock);
 			pw.println("  " + vis + " " + staticPrefix + name + " : " + type + modBlock
 					+ renderStereotypes(fr.stereotypes));
 		}
@@ -624,7 +622,7 @@ public class GenerateClassDiagram {
 
 	private static List<String> stereotypesOf(NodeWithAnnotations<?> n) {
 		return n.getAnnotations().stream().map(a -> a.getName().getIdentifier()) // simple name only
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	private static String renderStereotypes(List<String> ss) {

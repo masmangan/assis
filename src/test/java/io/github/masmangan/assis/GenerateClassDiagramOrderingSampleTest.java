@@ -12,7 +12,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-public class GenerateClassDiagramOrderingSampleTest {
+class GenerateClassDiagramOrderingSampleTest {
 
     @Test
     void packageAndTypeOrderingIsDeterministic() throws Exception {

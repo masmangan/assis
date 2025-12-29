@@ -10,7 +10,7 @@ import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
-public class GenerateClassDiagramPAnnotationSampleTest {
+class GenerateClassDiagramPAnnotationSampleTest {
 
     @Test
     void parameterSample_rendersAnnotationsInlineOnParameters() throws Exception {

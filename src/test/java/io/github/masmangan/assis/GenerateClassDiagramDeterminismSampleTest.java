@@ -13,7 +13,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-public class GenerateClassDiagramDeterminismSampleTest {
+class GenerateClassDiagramDeterminismSampleTest {
 
     @Test
     void twoConsecutiveGenerationsHaveSameOutput() throws Exception {
@@ -30,7 +30,6 @@ public class GenerateClassDiagramDeterminismSampleTest {
         Path out2 = tempDir.resolve("diagram-2.puml");
 
         GenerateClassDiagram.generate(sampleRoot, out1);
-        Thread.sleep(1100); // optional now, but keeps the intent clear
         GenerateClassDiagram.generate(sampleRoot, out2);
 
         String a = Files.readString(out1, StandardCharsets.UTF_8);

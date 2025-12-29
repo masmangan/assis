@@ -9,7 +9,7 @@ import static io.github.masmangan.assis.TestWorkbench.assertAnyLineContainsAll;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
 
-public class GenerateClassDiagramCAnnotationSampleTest {
+class GenerateClassDiagramCAnnotationSampleTest {
 
     @Test
     void fooSample_rendersAnnotationsOnTypeFieldAndMethod() throws Exception {

@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public class GenerateClassDiagramInnerTypeSampleTest {
+class GenerateClassDiagramInnerTypeSampleTest {
 
     private static final String RESOURCE_PATH = "samples/inner";
 

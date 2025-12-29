@@ -11,7 +11,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
-public class GenerateClassDiagramConstructorSampleTest {
+class GenerateClassDiagramConstructorSampleTest {
 
     @Test
     void rendersAllConstructorVisibilitiesWithCreateStereotype() throws Exception {
