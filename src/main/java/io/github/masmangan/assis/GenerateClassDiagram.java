@@ -85,7 +85,19 @@ public class GenerateClassDiagram {
 	enum Modifier {
 		ABSTRACT, FINAL
 	}
+	
+	static class RecordComponentRef {
+	    final String name;
+	    final com.github.javaparser.ast.type.Type type;
 
+	    RecordComponentRef(String name, com.github.javaparser.ast.type.Type type) {
+	        this.name = name;
+	        this.type = type;
+	    }
+	}
+	
+
+	
 	/**
 	 * 
 	 */
@@ -161,6 +173,8 @@ public class GenerateClassDiagram {
 		CompilationUnit cu;
 
 		String ownerFqn; // null for top-level
+		
+		List<RecordComponentRef> recordComponents = new ArrayList<>();
 	}
 
 	/**
@@ -275,6 +289,27 @@ public class GenerateClassDiagram {
 		classifier += " {";
 		return classifier;
 	}
+	
+	
+	private static void writeRecordComponents(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
+	    if (t.kind != Kind.RECORD) return;
+
+	   // for (var c : t.recordComponents) {
+	   //     pw.println("  " + c.name + " : " + c.type + renderStereotypes(c.stereotypes));
+	    //}
+	    for (RecordComponentRef rc : t.recordComponents) {
+	        String raw = rc.type.asString().replaceAll("<.*>", "").replace("[]", "").trim();
+	        String resolved = resolveTypeName(types, t, raw);
+
+	        // Se resolve para tipo do projeto: NÃO imprime no corpo
+	        if (resolved != null && !resolved.equals(t.fqn)) {
+	            continue;
+	        }
+
+	        // Caso contrário: imprime como parte do shape
+	        pw.println("  " + rc.name + " : " + rc.type.asString());
+	    }
+	}
 
 	/**
 	 * Writes package contents to the diagram.
@@ -297,6 +332,7 @@ public class GenerateClassDiagram {
 				pw.println(classifier);
 
 				writeEnumConstants(pw, t);
+				writeRecordComponents(pw, types, t);
 
 				writeFields(pw, types, t);
 
@@ -326,6 +362,7 @@ public class GenerateClassDiagram {
 		for (EnumConstantRef c : t.enumConstants) {
 			pw.println("  " + c.ecd.getNameAsString());
 		}
+		
 	}
 
 	/**
@@ -409,6 +446,16 @@ public class GenerateClassDiagram {
 			if (assocFqn != null) {
 				pw.println("\"" + t.fqn + "\" --> \"" + assocFqn + "\" : " + fr.vd.getNameAsString());
 			}
+		}
+		
+		if (t.kind == Kind.RECORD) {
+		    for (RecordComponentRef rc : t.recordComponents) {
+		        String raw = rc.type.asString().replaceAll("<.*>", "").replace("[]", "").trim();
+		        String target = resolveTypeName(types, t, raw);
+		        if (target != null && !target.equals(t.fqn)) {
+		            pw.println("\"" + t.fqn + "\" --> \"" + target + "\" : " + rc.name);
+		        }
+		    }
 		}
 	}
 
@@ -669,8 +716,15 @@ public class GenerateClassDiagram {
 			}
 
 		} else if (td instanceof RecordDeclaration rd) {
-			info.name = rd.getNameAsString();
-			info.kind = Kind.RECORD;
+		    info.name = rd.getNameAsString();
+		    info.kind = Kind.RECORD;
+
+		    rd.getParameters().forEach(p ->
+		        info.recordComponents.add(new RecordComponentRef(
+		            p.getNameAsString(),
+		            p.getType()
+		        ))
+		    );
 		} else if (td instanceof AnnotationDeclaration ad) {
 			info.name = ad.getNameAsString();
 			info.kind = Kind.ANNOTATION;
@@ -682,19 +736,16 @@ public class GenerateClassDiagram {
 
 		collectAnnotations(td, info);
 
-	    // FQN
 	    if (owner == null) {
 	        info.fqn = info.pkg == null || info.pkg.isEmpty()
 	                ? info.name
 	                : info.pkg + "." + info.name;
 	    } else {
-	        // semantic FQN in IR
 	        info.fqn = owner.fqn + "." + info.name;
 	    }
 
 	    types.put(info.fqn, info);
 
-	    // Recurse into nested types for any TypeDeclaration that can have members
 	    scanNestedTypes(types, cu, pkg, td, info);
 	}
 
@@ -706,7 +757,7 @@ public class GenerateClassDiagram {
 	        TypeInfo owner) {
 
 	    // Only Class/Interface and Enum declarations can contain member types in practice
-	    // (Record and Annotation types also can contain members in Java, but you can add later)
+	    // (Record and Annotation types also can contain members in Java, but we can add later)
 	    if (td instanceof ClassOrInterfaceDeclaration cid) {
 	        cid.getMembers().forEach(m -> {
 	            if (m instanceof TypeDeclaration<?> nested) {
