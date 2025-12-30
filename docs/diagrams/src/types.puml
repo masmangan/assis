@@ -3,12 +3,15 @@
 hide empty members
 !theme blueprint
 !pragma useIntermediatePackages false
+
 package "samples.types" {
   class "samples.types.Class" as Class
   interface "samples.types.Interface" as Interface
   record "samples.types.Record" as Record
   enum "samples.types.Enumeration" as Enumeration
   annotation "samples.types.Annotation" as Annotation
-}left to right direction
+}
+
+left to right direction
 
 @enduml

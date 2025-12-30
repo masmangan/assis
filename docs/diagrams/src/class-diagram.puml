@@ -7,16 +7,15 @@ hide empty members
 
 package "io.github.masmangan.assis" {
 class "io.github.masmangan.assis.AssisApp" <<final>> {
+  - {static} DOCS_UML_CLASS_DIAGRAM_PUML : String {final}
+  - {static} SRC_MAIN_JAVA : String {final}
   - <<create>> AssisApp()
   + main(args : String[]) : void {static}
 }
 class "io.github.masmangan.assis.GenerateClassDiagram" {
-  - {static} DOCS_UML_CLASS_DIAGRAM_PUML : String {final}
-  - {static} SRC_MAIN_JAVA : String {final}
   - {static} logger : Logger {final}
   - <<create>> GenerateClassDiagram()
   - versionOrDev() : String {static}
-  + generate() : void {static}
   + generate(src : Path, out : Path) : void {static}
   - assisLine() : String {static}
   - addHeader(pw : PrintWriter) : void {static}
@@ -48,6 +47,7 @@ class "io.github.masmangan.assis.GenerateClassDiagram" {
   - scanNestedTypes(types : Map<String,TypeInfo>, cu : CompilationUnit, pkg : String, td : TypeDeclaration<?>, owner : TypeInfo) : void {static}
   - pumlName(t : TypeInfo) : String {static}
   - fqn(t : TypeInfo) : String {static}
+  - scanEnum(info : TypeInfo, ed : EnumDeclaration) : void {static}
   - scanClassOrInterface(info : TypeInfo, cid : ClassOrInterfaceDeclaration) : void {static}
   - getFlags(method : MethodDeclaration) : String {static}
   - addFooter(pw : PrintWriter) : void {static}
@@ -86,9 +86,11 @@ enum "io.github.masmangan.assis.GenerateClassDiagram_Modifier" {
   FINAL
 }
 class "io.github.masmangan.assis.GenerateClassDiagram_RecordComponentRef" {
-  ~ name : String {final}
-  ~ type : com.github.javaparser.ast.type.Type {final}
-  ~ <<create>> RecordComponentRef(name : String, type : com.github.javaparser.ast.type.Type)
+  ~ param : Parameter {final}
+  ~ stereotypes : List<String> {final}
+  ~ <<create>> RecordComponentRef(p : Parameter)
+  ~ name() : String
+  ~ type() : Type
 }
 class "io.github.masmangan.assis.GenerateClassDiagram_TypeInfo" {
   ~ pkg : String
