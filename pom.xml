@@ -32,7 +32,12 @@
 
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
-    <sonar.organization>masmangan</sonar.organization>
+  <sonar.projectKey>io.github.masmangan.assis:assis</sonar.projectKey>
+  <sonar.organization>masmangan</sonar.organization>
+  <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+  <sonar.coverage.jacoco.xmlReportPaths>
+    assis-core/target/site/jacoco/jacoco.xml
+  </sonar.coverage.jacoco.xmlReportPaths>
   <javaparser.version>3.26.3</javaparser.version>
 
   </properties>
