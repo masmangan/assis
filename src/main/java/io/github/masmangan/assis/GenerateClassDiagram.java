@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -54,16 +53,6 @@ import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 public class GenerateClassDiagram {
 
 	/**
-	 * Default documentation path. We are borrowing from PlantUML folder convention.
-	 */
-	private static final String DOCS_UML_CLASS_DIAGRAM_PUML = "docs/diagrams/src/class-diagram.puml";
-
-	/**
-	 * Default source path. We are borrowing from Maven folder convention.
-	 */
-	private static final String SRC_MAIN_JAVA = "src/main/java";
-
-	/**
 	 * Logs info and warnings.
 	 */
 	private static final Logger logger = Logger.getLogger(GenerateClassDiagram.class.getName());
@@ -87,21 +76,28 @@ public class GenerateClassDiagram {
 	enum Modifier {
 		ABSTRACT, FINAL
 	}
-	
+
 	/**
 	 * 
 	 */
 	static class RecordComponentRef {
-		  final Parameter param;
-		  final List<String> stereotypes;
-		  RecordComponentRef(Parameter p) {
-		    this.param = p;
-		    this.stereotypes = stereotypesOf(p);
-		  }
-		  String name() { return param.getNameAsString(); }
-		  Type type() { return param.getType(); }
+		final Parameter param;
+		final List<String> stereotypes;
+
+		RecordComponentRef(Parameter p) {
+			this.param = p;
+			this.stereotypes = stereotypesOf(p);
 		}
-	
+
+		String name() {
+			return param.getNameAsString();
+		}
+
+		Type type() {
+			return param.getType();
+		}
+	}
+
 	/**
 	 * 
 	 */
@@ -177,7 +173,7 @@ public class GenerateClassDiagram {
 		CompilationUnit cu;
 
 		String ownerFqn; // null for top-level
-		
+
 		List<RecordComponentRef> recordComponents = new ArrayList<>();
 	}
 
@@ -189,18 +185,6 @@ public class GenerateClassDiagram {
 	private static String versionOrDev() {
 		String v = GenerateClassDiagram.class.getPackage().getImplementationVersion();
 		return (v == null || v.isBlank()) ? "dev" : v;
-	}
-
-	/**
-	 * Generates code for the current project.
-	 * 
-	 * @throws Exception
-	 */
-	public static void generate() throws IOException {
-		Path src = Paths.get(SRC_MAIN_JAVA);
-		Path out = Paths.get(DOCS_UML_CLASS_DIAGRAM_PUML);
-		Files.createDirectories(out.getParent());
-		generate(src, out);
 	}
 
 	/**
@@ -288,12 +272,12 @@ public class GenerateClassDiagram {
 		} else {
 			logger.log(Level.WARNING, () -> "Unexpected type: " + t.toString());
 		}
-		
+
 		classifier += renderStereotypes(t);
 		classifier += " {";
 		return classifier;
 	}
-	
+
 	/**
 	 * 
 	 * @param pw
@@ -301,20 +285,20 @@ public class GenerateClassDiagram {
 	 * @param t
 	 */
 	private static void writeRecordComponents(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
-	    if (t.kind != Kind.RECORD) return;
+		if (t.kind != Kind.RECORD)
+			return;
 
-	    for (RecordComponentRef rc : t.recordComponents) {
-	        String raw = rc.type().asString().replaceAll("<.*>", "").replace("[]", "").trim();
-	        String resolved = resolveTypeName(types, t, raw);
+		for (RecordComponentRef rc : t.recordComponents) {
+			String raw = rc.type().asString().replaceAll("<.*>", "").replace("[]", "").trim();
+			String resolved = resolveTypeName(types, t, raw);
 
-	        // If resolves to project type: skip body (association will show it)
-	        if (resolved != null && !resolved.equals(t.fqn)) {
-	            continue;
-	        }
+			// If resolves to project type: skip body (association will show it)
+			if (resolved != null && !resolved.equals(t.fqn)) {
+				continue;
+			}
 
-	        pw.println("  " + rc.name() + " : " + rc.type().asString()
-	                + renderStereotypes(rc.stereotypes));
-	    }
+			pw.println("  " + rc.name() + " : " + rc.type().asString() + renderStereotypes(rc.stereotypes));
+		}
 	}
 
 	/**
@@ -368,7 +352,7 @@ public class GenerateClassDiagram {
 		for (EnumConstantRef c : t.enumConstants) {
 			pw.println("  " + c.ecd.getNameAsString());
 		}
-		
+
 	}
 
 	/**
@@ -425,18 +409,18 @@ public class GenerateClassDiagram {
 		}
 
 		for (TypeInfo t : types.values()) {
-		    if (t.ownerFqn != null && !t.ownerFqn.isBlank()) {
-		        TypeInfo owner = types.get(t.ownerFqn);
-		        if (owner != null) {
-		            pw.println(fqn(owner) + " +-- " + fqn(t) );
-		        }
-		    }
-		}		
-		
+			if (t.ownerFqn != null && !t.ownerFqn.isBlank()) {
+				TypeInfo owner = types.get(t.ownerFqn);
+				if (owner != null) {
+					pw.println(fqn(owner) + " +-- " + fqn(t));
+				}
+			}
+		}
+
 		for (TypeInfo t : types.values()) {
 			writeAssociations(pw, types, t);
 		}
-		
+
 	}
 
 	/**
@@ -446,25 +430,25 @@ public class GenerateClassDiagram {
 	 * @param t
 	 */
 	private static void writeAssociations(PrintWriter pw, Map<String, TypeInfo> types, TypeInfo t) {
-	    // existing field-based associations
-	    for (FieldRef fr : t.fields) {
-	        String assocFqn = assocTypeFrom(types, t, fr.vd);
-	        if (assocFqn != null) {
-	            pw.println("\"" + t.fqn + "\" --> \"" + assocFqn + "\" : " + fr.vd.getNameAsString());
-	        }
-	    }
+		// existing field-based associations
+		for (FieldRef fr : t.fields) {
+			String assocFqn = assocTypeFrom(types, t, fr.vd);
+			if (assocFqn != null) {
+				pw.println("\"" + t.fqn + "\" --> \"" + assocFqn + "\" : " + fr.vd.getNameAsString());
+			}
+		}
 
-	    // NEW: record component associations
-	    if (t.kind == Kind.RECORD) {
-	        for (RecordComponentRef rc : t.recordComponents) {
-	            String raw = rc.type().asString().replaceAll("<.*>", "").replace("[]", "").trim();
-	            String target = resolveTypeName(types, t, raw);
-	            if (target != null && !target.equals(t.fqn)) {
-	                pw.println("\"" + t.fqn + "\" --> \"" + target + "\" : " + rc.name()
-	                        + renderStereotypes(rc.stereotypes));
-	            }
-	        }
-	    }
+		// NEW: record component associations
+		if (t.kind == Kind.RECORD) {
+			for (RecordComponentRef rc : t.recordComponents) {
+				String raw = rc.type().asString().replaceAll("<.*>", "").replace("[]", "").trim();
+				String target = resolveTypeName(types, t, raw);
+				if (target != null && !target.equals(t.fqn)) {
+					pw.println("\"" + t.fqn + "\" --> \"" + target + "\" : " + rc.name()
+							+ renderStereotypes(rc.stereotypes));
+				}
+			}
+		}
 	}
 
 	/**
@@ -668,7 +652,7 @@ public class GenerateClassDiagram {
 				String pkg = cu.getPackageDeclaration().map(pd -> pd.getNameAsString()).orElse("");
 
 				for (TypeDeclaration<?> td : cu.getTypes()) {
-					scanType(types, cu, pkg, td, null); 
+					scanType(types, cu, pkg, td, null);
 				}
 			});
 		}
@@ -715,30 +699,23 @@ public class GenerateClassDiagram {
 	 */
 	private static void scanType(Map<String, TypeInfo> types, CompilationUnit cu, String pkg, TypeDeclaration<?> td,
 			TypeInfo owner) {
-		
+
 		TypeInfo info = new TypeInfo();
 		info.pkg = pkg;
 		info.cu = cu;
 		info.td = td;
-		
-	    if (owner != null) {
-	        info.ownerFqn = owner.fqn;
-	    }
-		
+
+		if (owner != null) {
+			info.ownerFqn = owner.fqn;
+		}
+
 		if (td instanceof EnumDeclaration ed) {
-			info.name = ed.getNameAsString();
-			info.kind = Kind.ENUM;
-
-			for (EnumConstantDeclaration c : ed.getEntries()) {
-				info.enumConstants.add(new EnumConstantRef(c));
-			}
+			scanEnum(info, ed);
 		} else if (td instanceof RecordDeclaration rd) {
-		    info.name = rd.getNameAsString();
-		    info.kind = Kind.RECORD;
+			info.name = rd.getNameAsString();
+			info.kind = Kind.RECORD;
 
-		    rd.getParameters().forEach(p ->
-		        info.recordComponents.add(new RecordComponentRef(p))
-		    );
+			rd.getParameters().forEach(p -> info.recordComponents.add(new RecordComponentRef(p)));
 		} else if (td instanceof AnnotationDeclaration ad) {
 			info.name = ad.getNameAsString();
 			info.kind = Kind.ANNOTATION;
@@ -750,17 +727,15 @@ public class GenerateClassDiagram {
 
 		collectAnnotations(td, info);
 
-	    if (owner == null) {
-	        info.fqn = info.pkg == null || info.pkg.isEmpty()
-	                ? info.name
-	                : info.pkg + "." + info.name;
-	    } else {
-	        info.fqn = owner.fqn + "." + info.name;
-	    }
+		if (owner == null) {
+			info.fqn = info.pkg == null || info.pkg.isEmpty() ? info.name : info.pkg + "." + info.name;
+		} else {
+			info.fqn = owner.fqn + "." + info.name;
+		}
 
-	    types.put(info.fqn, info);
+		types.put(info.fqn, info);
 
-	    scanNestedTypes(types, cu, pkg, td, info);
+		scanNestedTypes(types, cu, pkg, td, info);
 	}
 
 	/**
@@ -771,51 +746,80 @@ public class GenerateClassDiagram {
 	 * @param td
 	 * @param owner
 	 */
-	private static void scanNestedTypes(
-	        Map<String, TypeInfo> types,
-	        CompilationUnit cu,
-	        String pkg,
-	        TypeDeclaration<?> td,
-	        TypeInfo owner) {
+	private static void scanNestedTypes(Map<String, TypeInfo> types, CompilationUnit cu, String pkg,
+			TypeDeclaration<?> td, TypeInfo owner) {
 
-	    // Only Class/Interface and Enum declarations can contain member types in practice
-	    // (Record and Annotation types also can contain members in Java, but we can add later)
-	    if (td instanceof ClassOrInterfaceDeclaration cid) {
-	        cid.getMembers().forEach(m -> {
-	            if (m instanceof TypeDeclaration<?> nested) {
-	                scanType(types, cu, pkg, nested, owner);
-	            }
-	        });
-	    } else if (td instanceof EnumDeclaration ed) {
-	        ed.getMembers().forEach(m -> {
-	            if (m instanceof TypeDeclaration<?> nested) {
-	                scanType(types, cu, pkg, nested, owner);
-	            }
-	        });
-	    }
-	}	
-	
+		// Only Class/Interface and Enum declarations can contain member types in
+		// practice
+		// (Record and Annotation types also can contain members in Java, but we can add
+		// later)
+		if (td instanceof ClassOrInterfaceDeclaration cid) {
+			cid.getMembers().forEach(m -> {
+				if (m instanceof TypeDeclaration<?> nested) {
+					scanType(types, cu, pkg, nested, owner);
+				}
+			});
+		} else if (td instanceof EnumDeclaration ed) {
+			ed.getMembers().forEach(m -> {
+				if (m instanceof TypeDeclaration<?> nested) {
+					scanType(types, cu, pkg, nested, owner);
+				}
+			});
+		}
+	}
+
 	/**
 	 * 
 	 * @param t
 	 * @return
 	 */
 	private static String pumlName(TypeInfo t) {
-	    if (t.ownerFqn == null || t.ownerFqn.isBlank()) {
-	        return t.fqn;
-	    }
-	    return t.ownerFqn + "_" + t.name; // exactly what the test expects
+		if (t.ownerFqn == null || t.ownerFqn.isBlank()) {
+			return t.fqn;
+		}
+		return t.ownerFqn + "_" + t.name; // exactly what the test expects
 	}
-	
+
 	/**
 	 * 
 	 * @param t
 	 * @return
 	 */
 	private static String fqn(TypeInfo t) {
-	    return "\"" + pumlName(t) + "\"";
-	}	
-	
+		return "\"" + pumlName(t) + "\"";
+	}
+
+	private static void scanEnum(TypeInfo info, EnumDeclaration ed) {
+		info.name = ed.getNameAsString();
+		info.kind = Kind.ENUM;
+
+		for (EnumConstantDeclaration c : ed.getEntries()) {
+			info.enumConstants.add(new EnumConstantRef(c));
+		}
+
+		// implements (enum can implement interfaces)
+		for (ClassOrInterfaceType impl : ed.getImplementedTypes()) {
+			info.implementsTypes.add(simpleName(impl.getNameAsString()));
+		}
+
+		// fields
+		for (FieldDeclaration fd : ed.getFields()) {
+			for (var v : fd.getVariables()) {
+				info.fields.add(new FieldRef(fd, v));
+			}
+		}
+
+		// ctors
+		for (ConstructorDeclaration ctor : ed.getConstructors()) {
+			info.constructors.add(new ConstructorRef(ctor));
+		}
+
+		// methods
+		for (MethodDeclaration method : ed.getMethods()) {
+			info.methods.add(new MethodRef(method));
+		}
+	}
+
 	/**
 	 * 
 	 * @param info

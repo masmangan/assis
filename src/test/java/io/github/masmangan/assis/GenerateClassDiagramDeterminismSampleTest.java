@@ -22,7 +22,7 @@ class GenerateClassDiagramDeterminismSampleTest {
 
         // reuse an existing sample
         Path sampleRoot = TestWorkbench.copySampleProjectToTemp(
-                "samples/enumvalues",
+                "samples/enums/values",
                 tempDir.resolve("enumvalues")
         );
 
