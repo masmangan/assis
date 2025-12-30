@@ -38,6 +38,7 @@
   <sonar.coverage.jacoco.xmlReportPaths>
     assis-core/target/site/jacoco/jacoco.xml
   </sonar.coverage.jacoco.xmlReportPaths>
+
   <javaparser.version>3.26.3</javaparser.version>
 
   </properties>
