@@ -46,9 +46,9 @@ Feature: JLS 8.1.1.1-1 – Abstract Class Declaration
       """
     And the diagram contains
       """
-      "Point" <|-- "ColoredPoint"
+      "ColoredPoint" --|> "Point"
       """
     And the diagram contains
       """
-      "Point" <|-- "SimplePoint"
+      "SimplePoint" --|> "Point"
       """

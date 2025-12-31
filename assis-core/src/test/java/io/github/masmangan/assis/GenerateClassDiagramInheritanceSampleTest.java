@@ -31,8 +31,8 @@ class GenerateClassDiagramInheritanceSampleTest {
         assertPumlContainsClass(puml, "samples.inheritance.Child");
 
         // relationships
-        assertPumlContains(puml, "\"samples.inheritance.A\" <|-- \"samples.inheritance.B\"");
-        assertPumlContains(puml, "\"samples.inheritance.Base\" <|-- \"samples.inheritance.Child\"");
-        assertPumlContains(puml, "\"samples.inheritance.B\" <|.. \"samples.inheritance.Child\"");
+        assertPumlContains(puml, "\"samples.inheritance.B\" --|> \"samples.inheritance.A\"");
+        assertPumlContains(puml, "\"samples.inheritance.Child\" --|> \"samples.inheritance.Base\"");
+        assertPumlContains(puml, "\"samples.inheritance.Child\" ..|> \"samples.inheritance.B\"");
     }
 }

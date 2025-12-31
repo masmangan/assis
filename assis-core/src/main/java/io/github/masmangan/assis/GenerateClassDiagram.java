@@ -74,7 +74,7 @@ public class GenerateClassDiagram {
 
 		logger.log(Level.INFO, () -> "Writing " + out);
 
-		writeDiagram(out, cus, index);
+		writeDiagram(out, index);
 
 	}
 
@@ -116,7 +116,7 @@ public class GenerateClassDiagram {
 		};
 	}
 
-	private static void writeDiagram(Path out, List<CompilationUnit> cus, DeclaredIndex idx) {
+	private static void writeDiagram(Path out, DeclaredIndex idx) {
 		try (PlantUMLWriter pw = new PlantUMLWriter(new PrintWriter(Files.newBufferedWriter(out)))) {
 			addHeader(pw);
 

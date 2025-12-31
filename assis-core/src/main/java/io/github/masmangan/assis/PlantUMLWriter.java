@@ -64,8 +64,7 @@ public class PlantUMLWriter implements AutoCloseable {
   }
 
   public void endPackage() {
-    dedent();
-    println("}");
+    endType();
   }
 
   public void beginClass(String name, String stereotypes) {

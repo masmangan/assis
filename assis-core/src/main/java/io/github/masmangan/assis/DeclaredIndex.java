@@ -69,10 +69,13 @@ class DeclaredIndex {
 	      String ownerFqn
 	  ) {
 	    String name = td.getNameAsString();
-	    String fqn = (ownerFqn == null)
-	        ? (pkg.isEmpty() ? name : pkg + "." + name)
-	        : ownerFqn + "." + name;
-
+	    String fqn;
+	    
+	    if (ownerFqn == null) {
+	    	fqn = pkg.isEmpty() ? name : pkg + "." + name;
+	    } else {
+	    	fqn = ownerFqn + "." + name;
+	    }
 	    idx.byFqn.put(fqn, td);
 
 	    if (td instanceof ClassOrInterfaceDeclaration cid) {
