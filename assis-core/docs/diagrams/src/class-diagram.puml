@@ -6,119 +6,85 @@ hide empty members
 !pragma useIntermediatePackages false
 
 package "io.github.masmangan.assis" {
-class "io.github.masmangan.assis.AssisApp" <<final>> {
-  - {static} DOCS_UML_CLASS_DIAGRAM_PUML : String {final}
-  - {static} SRC_MAIN_JAVA : String {final}
-  - <<create>> AssisApp()
-  + main(args : String[]) : void {static}
+  class "io.github.masmangan.assis.AssisApp" <<final>> {
+    - {static} DOCS_UML_CLASS_DIAGRAM_PUML : String {final}
+    - {static} SRC_MAIN_JAVA : String {final}
+    - <<create>> AssisApp()
+    + main(args : String[]) : void {static}
+  }
+  class "io.github.masmangan.assis.CollectRelationshipsVisitor" {
+    ~ <<create>> CollectRelationshipsVisitor(idx : DeclaredIndex)
+    - assocTypeFrom(pkg : String, ownerFqn : String, vd : VariableDeclarator) : String
+    - ownerFqnOf(fqn : String) : String {static}
+    ~ emitAll(pw : PlantUMLWriter) : void
+    - emitAssociations(pw : PlantUMLWriter, pkg : String, ownerFqn : String, td : TypeDeclaration<?>) : void
+    - emitExtendsImplements(pw : PlantUMLWriter, pkg : String, subFqn : String, td : TypeDeclaration<?>) : void
+  }
+  class "io.github.masmangan.assis.CollectTypesVisitor" {
+    - pkg : String {final}
+    ~ <<create>> CollectTypesVisitor(idx : DeclaredIndex, pkg : String)
+    - assocTypeFrom(ownerFqn : String, vd : VariableDeclarator) : String
+    - emitConstructors(pw : PlantUMLWriter, ctors : List<ConstructorDeclaration>) : void
+    - emitEnumConstants(pw : PlantUMLWriter, ed : EnumDeclaration) : void
+    - emitFields(pw : PlantUMLWriter, ownerFqn : String, fields : List<FieldDeclaration>) : void
+    - emitMethods(pw : PlantUMLWriter, methods : List<MethodDeclaration>) : void
+    - emitRecordComponents(pw : PlantUMLWriter, ownerFqn : String, rd : RecordDeclaration) : void
+    ~ emitType(pw : PlantUMLWriter, fqn : String, td : TypeDeclaration<?>) : void
+  }
+  class "io.github.masmangan.assis.DeclaredIndex" {
+    ~ byFqn : Map<String,TypeDeclaration<?>> {final}
+    ~ fqnsByPkg : Map<String,List<String>>
+    ~ uniqueBySimple : Map<String,String> {final}
+    ~ build(cus : List<CompilationUnit>) : DeclaredIndex {static}
+    ~ sortPackagesByNameFqn(byPkg : Map<String,List<String>>) : Map<String,List<String>> {static}
+    ~ packageOfFqn(fqn : String) : String {static}
+    ~ pumlName(fqn : String) : String
+    ~ qPuml(fqn : String) : String
+    ~ resolveTypeName(ownerPkg : String, rawName : String) : String
+    - collectTypeRecursive(idx : DeclaredIndex, cu : CompilationUnit, pkg : String, td : TypeDeclaration<?>, ownerFqn : String) : void {static}
+  }
+  class "io.github.masmangan.assis.GenerateClassDiagram" {
+    ~ {static} logger : Logger {final}
+    - <<create>> GenerateClassDiagram()
+    - scanSources(src : Path) : List<CompilationUnit> {static}
+    ~ stereotypesOf(n : NodeWithAnnotations<?>) : List<String> {static}
+    - assisLine() : String {static}
+    ~ getFlags(method : MethodDeclaration) : String {static}
+    ~ renderStereotypes(ss : List<String>) : String {static}
+    ~ simpleName(qname : String) : String {static}
+    - versionOrDev() : String {static}
+    ~ visibility(n : NodeWithAccessModifiers<?>) : String {static}
+    - addFooter(pw : PlantUMLWriter) : void {static}
+    - addHeader(pw : PlantUMLWriter) : void {static}
+    + generate(src : Path, out : Path) : void {static}
+    - writeDiagram(out : Path, cus : List<CompilationUnit>, idx : DeclaredIndex) : void {static}
+  }
+  class "io.github.masmangan.assis.PlantUMLWriter" {
+    - indent : int
+    - out : PrintWriter {final}
+    + <<create>> PlantUMLWriter(out : PrintWriter)
+    - q(name : String) : String {static}
+    - st(stereotypes : String) : String {static}
+    + beginAbstractClass(name : String, stereotypes : String) : void
+    + beginAnnotation(name : String, stereotypes : String) : void
+    + beginClass(name : String, stereotypes : String) : void
+    + beginEnum(name : String, stereotypes : String) : void
+    + beginInterface(name : String, stereotypes : String) : void
+    + beginPackage(name : String) : void
+    + beginRecord(name : String, stereotypes : String) : void
+    + close() : void <<Override>>
+    + dedent() : void
+    + endPackage() : void
+    + endType() : void
+    + flush() : void
+    + indent() : void
+    + print(text : String) : void
+    + println() : void
+    + println(line : String) : void
+  }
 }
-class "io.github.masmangan.assis.GenerateClassDiagram" {
-  - {static} logger : Logger {final}
-  - <<create>> GenerateClassDiagram()
-  - versionOrDev() : String {static}
-  + generate(src : Path, out : Path) : void {static}
-  - assisLine() : String {static}
-  - addHeader(pw : PrintWriter) : void {static}
-  - collectAnnotations(td : TypeDeclaration<?>, info : TypeInfo) : void {static}
-  - getClassifier(t : TypeInfo) : String {static}
-  - writeRecordComponents(pw : PrintWriter, types : Map<String,TypeInfo>, t : TypeInfo) : void {static}
-  - writePackages(pw : PrintWriter, byPkg : Map<String,List<TypeInfo>>, types : Map<String,TypeInfo>) : void {static}
-  - writeEnumConstants(pw : PrintWriter, t : TypeInfo) : void {static}
-  - writeConstructors(pw : PrintWriter, t : TypeInfo) : void {static}
-  - writeMethods(pw : PrintWriter, t : TypeInfo) : void {static}
-  - writeRelationships(pw : PrintWriter, types : Map<String,TypeInfo>) : void {static}
-  - writeAssociations(pw : PrintWriter, types : Map<String,TypeInfo>, t : TypeInfo) : void {static}
-  - displayTypeFrom(vd : VariableDeclarator) : String {static}
-  - assocTypeFrom(types : Map<String,TypeInfo>, owner : TypeInfo, vd : VariableDeclarator) : String {static}
-  - writeFields(pw : PrintWriter, types : Map<String,TypeInfo>, t : TypeInfo) : void {static}
-  - getVisibility(fr : FieldRef) : String {static}
-  - getVisibility(fr : MethodRef) : String {static}
-  - getVisibility(cr : ConstructorRef) : String {static}
-  - visibility(n : NodeWithAccessModifiers<?>) : String {static}
-  - writeImplements(pw : PrintWriter, types : Map<String,TypeInfo>, t : TypeInfo) : void {static}
-  - writeExtends(pw : PrintWriter, types : Map<String,TypeInfo>, t : TypeInfo) : void {static}
-  - sortPackagesByName(byPkg : Map<String,List<TypeInfo>>) : Map<String,List<TypeInfo>> {static}
-  - writeDiagram(out : Path, types : Map<String,TypeInfo>) : void {static}
-  - scanSources(src : Path, types : Map<String,TypeInfo>) : void {static}
-  - stereotypesOf(n : NodeWithAnnotations<?>) : List<String> {static}
-  - renderStereotypes(ss : List<String>) : String {static}
-  - renderStereotypes(t : TypeInfo) : String {static}
-  - scanType(types : Map<String,TypeInfo>, cu : CompilationUnit, pkg : String, td : TypeDeclaration<?>, owner : TypeInfo) : void {static}
-  - scanNestedTypes(types : Map<String,TypeInfo>, cu : CompilationUnit, pkg : String, td : TypeDeclaration<?>, owner : TypeInfo) : void {static}
-  - pumlName(t : TypeInfo) : String {static}
-  - fqn(t : TypeInfo) : String {static}
-  - scanEnum(info : TypeInfo, ed : EnumDeclaration) : void {static}
-  - scanClassOrInterface(info : TypeInfo, cid : ClassOrInterfaceDeclaration) : void {static}
-  - getFlags(method : MethodDeclaration) : String {static}
-  - addFooter(pw : PrintWriter) : void {static}
-  - simpleName(qname : String) : String {static}
-  - resolveTypeName(types : Map<String,TypeInfo>, owner : TypeInfo, name : String) : String {static}
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_ConstructorRef" {
-  ~ ctor : ConstructorDeclaration {final}
-  ~ stereotypes : List<String> {final}
-  + <<create>> ConstructorRef(ctor : ConstructorDeclaration)
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_EnumConstantRef" {
-  ~ ecd : EnumConstantDeclaration {final}
-  + <<create>> EnumConstantRef(ecd : EnumConstantDeclaration)
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_FieldRef" {
-  ~ fd : FieldDeclaration {final}
-  ~ vd : VariableDeclarator {final}
-  ~ stereotypes : List<String> {final}
-  ~ <<create>> FieldRef(fd : FieldDeclaration, vd : VariableDeclarator)
-}
-enum "io.github.masmangan.assis.GenerateClassDiagram_Kind" {
-  CLASS
-  INTERFACE
-  ENUM
-  RECORD
-  ANNOTATION
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_MethodRef" {
-  ~ method : MethodDeclaration {final}
-  ~ stereotypes : List<String> {final}
-  + <<create>> MethodRef(method : MethodDeclaration)
-}
-enum "io.github.masmangan.assis.GenerateClassDiagram_Modifier" {
-  ABSTRACT
-  FINAL
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_RecordComponentRef" {
-  ~ param : Parameter {final}
-  ~ stereotypes : List<String> {final}
-  ~ <<create>> RecordComponentRef(p : Parameter)
-  ~ name() : String
-  ~ type() : Type
-}
-class "io.github.masmangan.assis.GenerateClassDiagram_TypeInfo" {
-  ~ pkg : String
-  ~ name : String
-  ~ fqn : String
-  ~ modifiers : EnumSet<Modifier>
-  ~ extendsTypes : Set<String>
-  ~ implementsTypes : Set<String>
-  ~ fields : Set<FieldRef>
-  ~ methods : Set<MethodRef>
-  ~ constructors : Set<ConstructorRef>
-  ~ enumConstants : List<EnumConstantRef>
-  ~ stereotypes : List<String>
-  ~ td : TypeDeclaration<?>
-  ~ cu : CompilationUnit
-  ~ ownerFqn : String
-  ~ recordComponents : List<RecordComponentRef>
-}
-}
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_Kind"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_Modifier"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_RecordComponentRef"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_EnumConstantRef"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_FieldRef"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_ConstructorRef"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_MethodRef"
-"io.github.masmangan.assis.GenerateClassDiagram" +-- "io.github.masmangan.assis.GenerateClassDiagram_TypeInfo"
-"io.github.masmangan.assis.GenerateClassDiagram.TypeInfo" --> "io.github.masmangan.assis.GenerateClassDiagram.Kind" : kind
+"io.github.masmangan.assis.CollectRelationshipsVisitor" --> "io.github.masmangan.assis.DeclaredIndex" : idx
+"io.github.masmangan.assis.CollectTypesVisitor" --> "io.github.masmangan.assis.DeclaredIndex" : idx
 
 left to right direction
 
