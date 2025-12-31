@@ -13,15 +13,27 @@ import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 
 /**
  * 
  */
 class CollectRelationshipsVisitor {
+	/**
+	 * 
+	 */
 	private static final String HAS_A = " --> ";
-	private static final String IS_A_IMPLEMENTS = " ..|> ";
-	private static final String IS_A_EXTENDS = " --|> ";
 	
+	/**
+	 * 
+	 */
+	private static final String IS_A_IMPLEMENTS = " ..|> ";
+	
+	/**
+	 * 
+	 */
+	private static final String IS_A_EXTENDS = " --|> ";
+
 	private final DeclaredIndex idx;
 
 	/**
@@ -73,7 +85,7 @@ class CollectRelationshipsVisitor {
 			for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
 				emitExtends(pw, pkg, subFqn, ext);
 			}
-			
+
 			for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
 				emitImplements(pw, pkg, subFqn, impl);
 			}
@@ -84,6 +96,13 @@ class CollectRelationshipsVisitor {
 		}
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param pkg
+	 * @param subFqn
+	 * @param impl
+	 */
 	private void emitImplements(PlantUMLWriter pw, String pkg, String subFqn, ClassOrInterfaceType impl) {
 		String raw = GenerateClassDiagram.simpleName(impl.getNameWithScope());
 		String target = idx.resolveTypeName(pkg, raw);
@@ -91,11 +110,32 @@ class CollectRelationshipsVisitor {
 			pw.println(idx.qPuml(subFqn) + IS_A_IMPLEMENTS + idx.qPuml(target));
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param pkg
+	 * @param subFqn
+	 * @param ext
+	 */
 	private void emitExtends(PlantUMLWriter pw, String pkg, String subFqn, ClassOrInterfaceType ext) {
 		String raw = GenerateClassDiagram.simpleName(ext.getNameWithScope());
 		String target = idx.resolveTypeName(pkg, raw);
 		if (target != null)
 			pw.println(idx.qPuml(subFqn) + IS_A_EXTENDS + idx.qPuml(target));
+	}
+
+	/**
+	 * 
+	 * @param pw
+	 * @param ownerFqn
+	 * @param targetFqn
+	 * @param role
+	 * @param stereotypes
+	 */
+	private void emitAssociation(PlantUMLWriter pw, String ownerFqn, String targetFqn, String role,
+			String stereotypes) {
+		pw.println(idx.qPuml(ownerFqn) + HAS_A + idx.qPuml(targetFqn) + " : " + role
+				+ (stereotypes != null ? stereotypes : ""));
 	}
 
 	/**
@@ -108,42 +148,25 @@ class CollectRelationshipsVisitor {
 	private void emitAssociations(PlantUMLWriter pw, String pkg, String ownerFqn, TypeDeclaration<?> td) {
 		if (td instanceof ClassOrInterfaceDeclaration || td instanceof EnumDeclaration) {
 			for (FieldDeclaration fd : td.getFields()) {
+				String st = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(fd));
+
 				for (VariableDeclarator vd : fd.getVariables()) {
-					String assoc = assocTypeFrom(pkg, ownerFqn, vd);
-					if (assoc != null) {
-						pw.println(idx.qPuml(ownerFqn) + HAS_A + idx.qPuml(assoc) + " : " + vd.getNameAsString());
+					String target = resolveAssocTarget(pkg, ownerFqn, vd.getType());
+					if (target != null) {
+						emitAssociation(pw, ownerFqn, target, vd.getNameAsString(), st);
 					}
 				}
 			}
-			// TODO: don't we have stereotypes samples for fields on class, interface, or enumerations???
-			// TODO: but we do have stereotype samples for record parameters?
 		} else if (td instanceof RecordDeclaration rd) {
 			for (Parameter p : rd.getParameters()) {
-				String raw = p.getType().asString().replaceAll("<.*>", "").replace("[]", "").trim();
-				String target = idx.resolveTypeName(pkg, raw);
-				if (target != null && !target.equals(ownerFqn)) {
-					pw.println(idx.qPuml(ownerFqn) + HAS_A + idx.qPuml(target) + " : " + p.getNameAsString()
-							+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p)));
+				String target = resolveAssocTarget(pkg, ownerFqn, p.getType());
+				if (target != null) {
+					String st = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p));
+
+					emitAssociation(pw, ownerFqn, target, p.getNameAsString(), st);
 				}
 			}
 		}
-	}
-	
-	/**
-	 * 
-	 * @param pkg
-	 * @param ownerFqn
-	 * @param vd
-	 * @return
-	 */
-	private String assocTypeFrom(String pkg, String ownerFqn, VariableDeclarator vd) {
-		String raw = vd.getType().asString().replaceAll("<.*>", "").replace("[]", "").trim();
-		String resolved = idx.resolveTypeName(pkg, raw);
-		if (resolved == null)
-			return null;
-		if (resolved.equals(ownerFqn))
-			return null;
-		return resolved;
 	}
 
 	/**
@@ -157,4 +180,47 @@ class CollectRelationshipsVisitor {
 			return null;
 		return fqn.substring(0, lastDot);
 	}
+
+	/**
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private Type peelArrays(Type type) {
+		Type t = type;
+		while (t.isArrayType()) {
+			t = t.asArrayType().getComponentType();
+		}
+		return t;
+	}
+
+	/**
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private String rawNameOf(Type type) {
+		Type t = peelArrays(type);
+
+		if (t.isClassOrInterfaceType()) {
+			return t.asClassOrInterfaceType().getNameAsString(); // raw type: List, Optional, Foo
+		}
+		return t.asString(); // primitives etc.
+	}
+
+	/**
+	 * 
+	 * @param pkg
+	 * @param ownerFqn
+	 * @param type
+	 * @return
+	 */
+	private String resolveAssocTarget(String pkg, String ownerFqn, Type type) {
+		String raw = rawNameOf(type);
+		String target = idx.resolveTypeName(pkg, raw);
+		if (target == null || target.equals(ownerFqn))
+			return null;
+		return target;
+	}
+
 }

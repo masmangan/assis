@@ -116,6 +116,11 @@ public class GenerateClassDiagram {
 		};
 	}
 
+	/**
+	 * 
+	 * @param out
+	 * @param idx
+	 */
 	private static void writeDiagram(Path out, DeclaredIndex idx) {
 		try (PlantUMLWriter pw = new PlantUMLWriter(new PrintWriter(Files.newBufferedWriter(out)))) {
 			addHeader(pw);
@@ -147,6 +152,12 @@ public class GenerateClassDiagram {
 		}
 	}
 
+	/**
+	 * 
+	 * @param src
+	 * @return
+	 * @throws IOException
+	 */
 	private static List<CompilationUnit> scanSources(Path src) throws IOException {
 		if (!Files.exists(src)) {
 			logger.log(Level.WARNING, () -> "Source folder does not exist: " + src);

@@ -26,14 +26,33 @@ import com.github.javaparser.ast.body.VariableDeclarator;
  * 
  */
 class CollectTypesVisitor {
+	
+	/**
+	 * 
+	 */
 	private final DeclaredIndex idx;
+	
+	/**
+	 * 
+	 */
 	private final String pkg; 
 
+	/**
+	 * 
+	 * @param idx
+	 * @param pkg
+	 */
 	CollectTypesVisitor(DeclaredIndex idx, String pkg) {
 		this.idx = idx;
 		this.pkg = (pkg == null) ? "" : pkg;
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param fqn
+	 * @param td
+	 */
 	void emitType(PlantUMLWriter pw, String fqn, TypeDeclaration<?> td) {
 		String stereotypes = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(td));
 		String pumlName = idx.pumlName(fqn);
@@ -58,11 +77,26 @@ class CollectTypesVisitor {
 		}
 
 		if (td instanceof RecordDeclaration rd) {
-			pw.beginRecord(pumlName, stereotypes);
-			emitRecordComponents(pw, fqn, rd);
-			// TODO: records podem ter membros também (fields/methods/ctors) 
-			pw.endType();
-			return;
+		    pw.beginRecord(pumlName, stereotypes);
+
+		    emitRecordComponents(pw, fqn, rd);
+
+		    var componentNames = rd.getParameters().stream()
+		        .map(p -> p.getNameAsString())
+		        .collect(java.util.stream.Collectors.toSet());
+
+		    var extraFields = rd.getFields().stream()
+		        .filter(fd -> fd.getVariables().stream()
+		            .noneMatch(vd -> componentNames.contains(vd.getNameAsString())))
+		        .toList();
+
+		    emitFields(pw, fqn, extraFields);
+
+		    emitConstructors(pw, rd.getConstructors());
+		    emitMethods(pw, rd.getMethods());
+
+		    pw.endType();
+		    return;
 		}
 
 		if (td instanceof EnumDeclaration ed) {
@@ -84,20 +118,30 @@ class CollectTypesVisitor {
 		GenerateClassDiagram.logger.log(Level.WARNING, () -> "Unexpected type: " + td);
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param ed
+	 */
 	private void emitEnumConstants(PlantUMLWriter pw, EnumDeclaration ed) {
 		for (EnumConstantDeclaration c : ed.getEntries()) {
 			pw.println(c.getNameAsString());
 		}
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param ownerFqn
+	 * @param rd
+	 */
 	private void emitRecordComponents(PlantUMLWriter pw, String ownerFqn, RecordDeclaration rd) {
 		for (Parameter p : rd.getParameters()) {
 			List<String> ss = GenerateClassDiagram.stereotypesOf(p);
 			String raw = p.getType().asString().replaceAll("<.*>", "").replace("[]", "").trim();
 			String resolved = idx.resolveTypeName(pkg, raw);
 
-			// Se resolve para tipo do projeto (e não é o próprio), não imprime (associação
-			// vai mostrar)
+
 			if (resolved != null && !resolved.equals(ownerFqn))
 				continue;
 
@@ -105,6 +149,12 @@ class CollectTypesVisitor {
 		}
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param ownerFqn
+	 * @param fields
+	 */
 	private void emitFields(PlantUMLWriter pw, String ownerFqn, List<FieldDeclaration> fields) {
 
 		List<FieldDeclaration> sorted = new ArrayList<>(fields);
@@ -116,30 +166,47 @@ class CollectTypesVisitor {
 
 		for (FieldDeclaration fd : sorted) {
 			for (VariableDeclarator vd : fd.getVariables()) {
-				String assoc = assocTypeFrom(ownerFqn, vd);
-				if (assoc != null)
-					continue;
-
-				String name = vd.getNameAsString();
-				String type = vd.getType().asString();
-				String staticPrefix = fd.isStatic() ? "{static} " : "";
-				String vis = GenerateClassDiagram.visibility(fd);
-
-				List<String> mods = new ArrayList<>();
-				if (fd.isFinal())
-					mods.add("final");
-				if (fd.isTransient())
-					mods.add("transient");
-				if (fd.isVolatile())
-					mods.add("volatile");
-				String modBlock = mods.isEmpty() ? "" : " {" + String.join(", ", mods) + "}";
-
-				pw.println(vis + " " + staticPrefix + name + " : " + type + modBlock
-						+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(fd)));
+				emitVariableDeclarator(pw, ownerFqn, fd, vd);
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param ownerFqn
+	 * @param fd
+	 * @param vd
+	 */
+	private void emitVariableDeclarator(PlantUMLWriter pw, String ownerFqn, FieldDeclaration fd,
+			VariableDeclarator vd) {
+		String assoc = assocTypeFrom(ownerFqn, vd);
+		if (assoc != null)
+			return;
+
+		String name = vd.getNameAsString();
+		String type = vd.getType().asString();
+		String staticPrefix = fd.isStatic() ? "{static} " : "";
+		String vis = GenerateClassDiagram.visibility(fd);
+
+		List<String> mods = new ArrayList<>();
+		if (fd.isFinal())
+			mods.add("final");
+		if (fd.isTransient())
+			mods.add("transient");
+		if (fd.isVolatile())
+			mods.add("volatile");
+		String modBlock = mods.isEmpty() ? "" : " {" + String.join(", ", mods) + "}";
+
+		pw.println(vis + " " + staticPrefix + name + " : " + type + modBlock
+				+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(fd)));
+	}
+
+	/**
+	 * 
+	 * @param pw
+	 * @param ctors
+	 */
 	private void emitConstructors(PlantUMLWriter pw, List<ConstructorDeclaration> ctors) {
 		List<ConstructorDeclaration> sorted = new ArrayList<>(ctors);
 		sorted.sort((a, b) -> a.getDeclarationAsString(false, false, false)
@@ -155,6 +222,11 @@ class CollectTypesVisitor {
 		}
 	}
 
+	/**
+	 * 
+	 * @param pw
+	 * @param methods
+	 */
 	private void emitMethods(PlantUMLWriter pw, List<MethodDeclaration> methods) {
 		List<MethodDeclaration> sorted = new ArrayList<>(methods);
 		sorted.sort((a, b) -> a.getDeclarationAsString(false, false, false)
@@ -174,6 +246,12 @@ class CollectTypesVisitor {
 		}
 	}
 
+	/**
+	 * 
+	 * @param ownerFqn
+	 * @param vd
+	 * @return
+	 */
 	private String assocTypeFrom(String ownerFqn, VariableDeclarator vd) {
 		String raw = vd.getType().asString().replaceAll("<.*>", "").replace("[]", "").trim();
 		String resolved = idx.resolveTypeName(pkg, raw);
