@@ -10,10 +10,10 @@ import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsName;
 import static io.github.masmangan.assis.TestWorkbench.assertPumlNotContains;
 import static io.github.masmangan.assis.TestWorkbench.generatePumlFromSample;
 import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
+import static io.github.masmangan.assis.TestWorkbench.assertPumlContainsClass;
 
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -67,7 +67,7 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
     }
 
     @Test
-    void sample04_rendersRecordComponentListAsFieldWithoutAssociationInterpretation() throws Exception {
+    void rendersRecordComponentListAsFieldWithoutAssociationInterpretation() throws Exception {
         String puml = generatePumlFromSample(
                 "samples/associations/records",
                 tempDir,
@@ -83,7 +83,7 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
     }
 
     @Test
-    void sample05_rendersOptionalFieldAndRecordComponentAsFieldsWithoutAssociationInterpretation() throws Exception {
+    void rendersOptionalFieldAndRecordComponentAsFieldsWithoutAssociationInterpretation() throws Exception {
         String puml = generatePumlFromSample(
                 "samples/associations/optionals",
                 tempDir,
@@ -100,7 +100,7 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
     }
 
     @Test
-    void sample06_generatesAssociationForCrossPackageTypeUsingFqn() throws Exception {
+    void generatesAssociationForCrossPackageTypeUsingFqn() throws Exception {
         String puml = generatePumlFromSample(
                 "samples/associations/cross",
                 tempDir,
@@ -113,7 +113,7 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
     }
 
     @Test
-    void sample07_generatesAssociationForEnumField() throws Exception {
+    void generatesAssociationForEnumField() throws Exception {
         String puml = generatePumlFromSample(
                 "samples/associations/enum",
                 tempDir,
@@ -125,20 +125,13 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
         assertAnyLineContainsAll(puml, "p1.EnumFieldSample", "-->", "p1.H", ":", "h");
     }
 
-    // -------------------------------------------------------------------------
-    // Sample 08 — Interface constant
-    // package p1; class I {}
-    // interface InterfaceConstant { I DEFAULT = null; }
-    // "p1.InterfaceConstant" --> "p1.I" : DEFAULT
-    // -------------------------------------------------------------------------
 
-    @Disabled("Enable one sample at a time while adding sample folders/files.")
     @Test
-    void sample08_generatesAssociationForInterfaceConstantField() throws Exception {
+    void generatesAssociationForInterfaceConstantField() throws Exception {
         String puml = generatePumlFromSample(
-                "samples/associations/sample08-interface-constant",
+                "samples/associations/constant",
                 tempDir,
-                "sample08-interface-constant"
+                "constant"
         );
 
         assertPumlContainsName(puml, "p1.InterfaceConstant");
@@ -146,68 +139,34 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
         assertAnyLineContainsAll(puml, "p1.InterfaceConstant", "-->", "p1.I", ":", "DEFAULT");
     }
 
-    // -------------------------------------------------------------------------
-    // Sample 09 — Field annotation stereotypes in relationship (field + record component)
-    // "p1.FieldStereotypeSample" --> "p1.J" : j <<AssocTag>>
-    // "p1.RecordStereotypeSample" --> "p1.J" : j <<AssocTag>>
-    // -------------------------------------------------------------------------
 
-    @Disabled("Enable one sample at a time while adding sample folders/files.")
     @Test
-    void sample09_generatesAssociationStereotypesFromAnnotations() throws Exception {
+    void generatesAssociationStereotypesFromAnnotations() throws Exception {
         String puml = generatePumlFromSample(
-                "samples/associations/sample09-field-stereotype",
+                "samples/associations/stereotype",
                 tempDir,
-                "sample09-field-stereotype"
+                "stereotype"
         );
 
-        assertPumlContainsName(puml, "p1.FieldStereotypeSample");
-        assertPumlContainsName(puml, "p1.RecordStereotypeSample");
+        assertPumlContainsName(puml, "p1.FieldStereotype");
+        assertPumlContainsName(puml, "p1.RecordStereotype");
         assertPumlContainsName(puml, "p1.J");
 
-        assertAnyLineContainsAll(puml, "p1.FieldStereotypeSample", "-->", "p1.J", ":", "j", "<<AssocTag>>");
-        assertAnyLineContainsAll(puml, "p1.RecordStereotypeSample", "-->", "p1.J", ":", "j", "<<AssocTag>>");
+        assertAnyLineContainsAll(puml, "p1.FieldStereotype", "-->", "p1.J", ":", "x", "<<AssocTag>>");
+        assertAnyLineContainsAll(puml, "p1.RecordStereotype", "-->", "p1.J", ":", "y", "<<AssocTag>>");
     }
 
-    // -------------------------------------------------------------------------
-    // Sample 10 — Method return type MUST NOT create dependency
-    // class A { B b; B m(){ return b; } }
-    // Contains: A --> B : b
-    // Not contains: A ..> B
-    // -------------------------------------------------------------------------
-
-    @Disabled("Enable one sample at a time while adding sample folders/files.")
     @Test
-    void sample10_methodReturnTypeDoesNotCreateDependency() throws Exception {
-        String puml = generatePumlFromSample(
-                "samples/associations/sample10-no-method-dependency",
+    void generatesDiagramContainingAssociation() throws Exception {
+        String puml = TestWorkbench.generatePumlFromSample(
+                "samples/associations/association",
                 tempDir,
-                "sample10-no-method-dependency"
-        );
+                "association");
 
-        assertAnyLineContainsAll(puml, "A", "-->", "B", ":", "b");
-        assertPumlNotContains(puml, "..>");
-    }
+        assertPumlContains(puml, "\"samples.association.Order\" --> \"samples.association.Customer\" : buyer");
+        assertPumlContainsClass(puml, "samples.association.Order");
+        assertPumlContainsClass(puml, "samples.association.Customer");
 
-    // -------------------------------------------------------------------------
-    // Sample 11 — Only fields count; method return doesn't add relations
-    // class B {} class C {}
-    // class A { B b; C c; B m() {} }
-    // Expected: A --> B : b
-    // Not contains: A ..> B (dependency)
-    // -------------------------------------------------------------------------
-
-    @Disabled("Enable one sample at a time while adding sample folders/files.")
-    @Test
-    void sample11_onlyFieldAssociationsAreEmitted() throws Exception {
-        String puml = generatePumlFromSample(
-                "samples/associations/sample11-only-fields",
-                tempDir,
-                "sample11-only-fields"
-        );
-
-        assertAnyLineContainsAll(puml, "A", "-->", "B", ":", "b");
-        assertPumlNotContains(puml, "..>");
     }
 
 }

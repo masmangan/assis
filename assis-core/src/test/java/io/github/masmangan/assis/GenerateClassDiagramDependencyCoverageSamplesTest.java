@@ -155,4 +155,45 @@ class GenerateClassDiagramDependencyCoverageSamplesTest {
         assertPumlContainsName(puml, "p2.G");
         assertAnyLineContainsAll(puml, "p1.A", "..>", "p2.G");
     }
+    
+    // -------------------------------------------------------------------------
+    // Sample 10 — Method return type MUST NOT create dependency
+    // class A { B b; B m(){ return b; } }
+    // Contains: A --> B : b
+    // Not contains: A ..> B
+    // -------------------------------------------------------------------------
+
+    @Disabled("Enable one sample at a time while adding sample folders/files.")
+    @Test
+    void sample10_methodReturnTypeDoesNotCreateDependency() throws Exception {
+        String puml = generatePumlFromSample(
+                "samples/associations/sample10-no-method-dependency",
+                tempDir,
+                "sample10-no-method-dependency"
+        );
+
+        assertAnyLineContainsAll(puml, "A", "-->", "B", ":", "b");
+        assertPumlNotContains(puml, "..>");
+    }
+
+    // -------------------------------------------------------------------------
+    // Sample 11 — Only fields count; method return doesn't add relations
+    // class B {} class C {}
+    // class A { B b; C c; B m() {} }
+    // Expected: A --> B : b
+    // Not contains: A ..> B (dependency)
+    // -------------------------------------------------------------------------
+
+    @Disabled("Enable one sample at a time while adding sample folders/files.")
+    @Test
+    void sample11_onlyFieldAssociationsAreEmitted() throws Exception {
+        String puml = generatePumlFromSample(
+                "samples/associations/sample11-only-fields",
+                tempDir,
+                "sample11-only-fields"
+        );
+
+        assertAnyLineContainsAll(puml, "A", "-->", "B", ":", "b");
+        assertPumlNotContains(puml, "..>");
+    }    
 }
