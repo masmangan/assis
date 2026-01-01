@@ -57,12 +57,15 @@ class CollectRelationshipsVisitor {
 			}
 		}
 
+		// FIXME: Bug 12
 		for (String fqn : idx.byFqn.keySet()) {
 			String ownerFqn = ownerFqnOf(fqn);
+			System.out.printf("\n%s\n%s\n", fqn, ownerFqn);
 			if (ownerFqn != null && idx.byFqn.containsKey(ownerFqn)) {
 				pw.println(idx.qPuml(ownerFqn) + " +-- " + idx.qPuml(fqn));
 			}
 		}
+		//
 
 		for (var entry : idx.fqnsByPkg.entrySet()) {
 			String pkg = entry.getKey();
@@ -184,9 +187,11 @@ class CollectRelationshipsVisitor {
 	 */
 	private static String ownerFqnOf(String fqn) {
 		int lastDot = fqn.lastIndexOf('.');
-		if (lastDot < 0)
+		int firstDollar = fqn.indexOf('$');
+		if (lastDot < 0 && firstDollar < 0)
 			return null;
-		return fqn.substring(0, lastDot);
+		
+		return fqn.substring(0, Math.max(lastDot, firstDollar));
 	}
 
 	/**

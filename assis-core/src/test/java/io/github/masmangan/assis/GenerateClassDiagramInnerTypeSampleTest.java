@@ -28,9 +28,9 @@ class GenerateClassDiagramInnerTypeSampleTest {
                 "inner");
 
         assertPumlContains(puml, "class \"samples.inner.SimpleInner\"");
-        assertPumlContains(puml, "enum \"samples.inner.SimpleInner_E\"");
+        assertPumlContains(puml, "enum \"samples.inner.SimpleInner$E\"");
         assertAppearsInOrder(puml, "X", "Y");
         assertPumlContains(puml,
-                "\"samples.inner.SimpleInner\" +-- \"samples.inner.SimpleInner_E\"");
+                "\"samples.inner.SimpleInner\" +-- \"samples.inner.SimpleInner$E\"");
     }
 }

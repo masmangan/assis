@@ -240,7 +240,13 @@ public class GenerateClassDiagram {
 	 * @return
 	 */
 	static String simpleName(String qname) {
-		int lt = qname.lastIndexOf('.');
-		return (lt >= 0) ? qname.substring(lt + 1) : qname;
+		String s = qname;
+		int lt = s.lastIndexOf('.');
+		if (lt >= 0) 
+           s = s.substring(lt + 1);
+		lt = s.lastIndexOf('$');
+		if (lt >= 0) 
+           s = s.substring(lt + 1);	
+		return s;
 	}
 }

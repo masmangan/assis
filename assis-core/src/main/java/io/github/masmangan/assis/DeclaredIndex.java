@@ -23,6 +23,8 @@ import com.github.javaparser.ast.body.TypeDeclaration;
  */
 class DeclaredIndex {
 
+  private static final String PACKAGE_SEPARATOR = ".";
+
   /** FQN → declaration */
   final Map<String, TypeDeclaration<?>> byFqn = new LinkedHashMap<>();
 
@@ -49,7 +51,7 @@ class DeclaredIndex {
           .orElse("");
 
       for (TypeDeclaration<?> td : cu.getTypes()) {
-        collectTypeRecursive(idx, pkg, td, null);
+        collectTypeRecursive(idx, pkg, td, null, PACKAGE_SEPARATOR);
       }
     }
 
@@ -91,20 +93,21 @@ class DeclaredIndex {
    * @param pkg
    * @param td
    * @param ownerFqn
+ * @param separator 
    */
   private static void collectTypeRecursive(
       DeclaredIndex idx,
       String pkg,
       TypeDeclaration<?> td,
-      String ownerFqn
+      String ownerFqn, String separator
   ) {
     String name = td.getNameAsString();
     String fqn;
 
     if (ownerFqn == null) {
-      fqn = pkg.isEmpty() ? name : pkg + "." + name;
+      fqn = pkg.isEmpty() ? name : pkg + separator + name;
     } else {
-      fqn = ownerFqn + "." + name;
+      fqn = ownerFqn + separator + name;
     }
 
     idx.byFqn.put(fqn, td);
@@ -113,13 +116,13 @@ class DeclaredIndex {
     if (td instanceof ClassOrInterfaceDeclaration cid) {
       cid.getMembers().forEach(m -> {
         if (m instanceof TypeDeclaration<?> nested) {
-          collectTypeRecursive(idx, pkg, nested, fqn);
+          collectTypeRecursive(idx, pkg, nested, fqn, "$");
         }
       });
     } else if (td instanceof EnumDeclaration ed) {
       ed.getMembers().forEach(m -> {
         if (m instanceof TypeDeclaration<?> nested) {
-          collectTypeRecursive(idx, pkg, nested, fqn);
+          collectTypeRecursive(idx, pkg, nested, fqn, "$");
         }
       });
     }
@@ -152,13 +155,13 @@ class DeclaredIndex {
     String raw = rawName.trim();
     if (raw.isEmpty()) return null;
 
-    if (raw.contains(".") && byFqn.containsKey(raw)) return raw;
+    if (raw.contains(PACKAGE_SEPARATOR) && byFqn.containsKey(raw)) return raw;
 
     String simple = GenerateClassDiagram.simpleName(raw);
 
     String samePkg = (ownerPkg == null || ownerPkg.isEmpty())
         ? simple
-        : ownerPkg + "." + simple;
+        : ownerPkg + PACKAGE_SEPARATOR + simple;
 
     if (byFqn.containsKey(samePkg)) return samePkg;
 
@@ -171,15 +174,6 @@ class DeclaredIndex {
    * @return
    */
   String pumlName(String fqn) {
-    int lastDot = fqn.lastIndexOf('.');
-    if (lastDot < 0) return fqn;
-
-    String prefix = fqn.substring(0, lastDot);
-    String name = fqn.substring(lastDot + 1);
-
-    if (byFqn.containsKey(prefix)) {
-      return prefix + "_" + name;
-    }
     return fqn;
   }
 
