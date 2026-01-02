@@ -14,6 +14,7 @@
 	<modules>
 		<module>assis-core</module>
 		<module>assis-by-example</module>
+		<module>assis-cli</module>
 	</modules>
 
 	<licenses>
@@ -26,42 +27,53 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
 		<maven.compiler.release>17</maven.compiler.release>
 
-		<javaparser.version>3.26.3</javaparser.version>
-		<maven.plugin.api.version>3.9.6</maven.plugin.api.version>
+		<!-- Libraries -->
+		<javaparser.version>3.27.1</javaparser.version>
 
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<junit.jupiter.version>5.10.2</junit.jupiter.version>
+		<!-- Plugin versions (centralized) -->
+		<maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+		<maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+		<jacoco.plugin.version>0.8.14</jacoco.plugin.version>
+		<maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+		<maven.clean.plugin.version>3.3.2</maven.clean.plugin.version>
+		<maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+		<exec.maven.plugin.version>3.1.0</exec.maven.plugin.version>
+		<sonar.maven.plugin.version>5.5.0.6356</sonar.maven.plugin.version>
+
+		<!-- SonarCloud -->
 		<sonar.projectKey>io.github.masmangan.assis:assis</sonar.projectKey>
 		<sonar.organization>masmangan</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+
+		<!-- If you keep per-module reports, list them all (comma-separated). -->
 		<sonar.coverage.jacoco.xmlReportPaths>
-			assis-core/target/site/jacoco/jacoco.xml
+			assis-core/target/site/jacoco/jacoco.xml,assis-cli/target/site/jacoco/jacoco.xml
 		</sonar.coverage.jacoco.xmlReportPaths>
-
-		<javaparser.version>3.26.3</javaparser.version>
-
 	</properties>
+
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.junit</groupId>
 				<artifactId>junit-bom</artifactId>
-				<version>5.10.2</version>
+				<version>6.0.1</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.github.javaparser</groupId>
+				<artifactId>javaparser-core</artifactId>
+				<version>${javaparser.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.github.javaparser</groupId>
-			<artifactId>javaparser-core</artifactId>
-			<version>${javaparser.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
@@ -69,23 +81,89 @@
 		</dependency>
 	</dependencies>
 
-
 	<build>
 		<pluginManagement>
 			<plugins>
-				<plugin>
-					<groupId>org.sonarsource.scanner.maven</groupId>
-					<artifactId>sonar-maven-plugin</artifactId>
-					<version>5.5.0.6356</version>
-				</plugin>
+
+				<!-- Build / Quality -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.13.0</version>
+					<version>${maven.compiler.plugin.version}</version>
 					<configuration>
 						<release>${maven.compiler.release}</release>
 					</configuration>
 				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>${maven.surefire.plugin.version}</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>${jacoco.plugin.version}</version>
+					<executions>
+						<execution>
+							<id>prepare-agent</id>
+							<goals>
+								<goal>prepare-agent</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>report</id>
+							<phase>verify</phase>
+							<goals>
+								<goal>report</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+
+				<!-- Packaging -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>${maven.jar.plugin.version}</version>
+					<configuration>
+						<archive>
+							<manifest>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							</manifest>
+						</archive>
+					</configuration>
+				</plugin>
+
+				<!-- Mostly default, but pinned versions centrally -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-clean-plugin</artifactId>
+					<version>${maven.clean.plugin.version}</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>${maven.resources.plugin.version}</version>
+				</plugin>
+
+				<!-- Keep available globally, but don’t “force” it into every
+				module -->
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>${exec.maven.plugin.version}</version>
+				</plugin>
+
+				<!-- Sonar -->
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>${sonar.maven.plugin.version}</version>
+				</plugin>
+
 			</plugins>
 		</pluginManagement>
 	</build>
