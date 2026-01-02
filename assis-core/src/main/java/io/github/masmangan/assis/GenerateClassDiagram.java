@@ -128,7 +128,7 @@ public class GenerateClassDiagram {
 						new PrintWriter(Files.newBufferedWriter(out, StandardCharsets.UTF_8)));
 
 		) {
-			pw.println("@startuml class-diagram");
+			pw.beginDiagram("class-diagram");
 
 			addHeader(pw);
 
@@ -159,7 +159,7 @@ public class GenerateClassDiagram {
 			
 			addFooter(pw);
 			
-			pw.println("@enduml");
+			pw.endDiagram();
 			
 		} catch (IOException e) {
 			logger.log(Level.WARNING, () -> "Error writing diagram file: " + e.getLocalizedMessage());
