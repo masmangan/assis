@@ -13,12 +13,22 @@ package "io.github.masmangan.assis" {
     + main(args : String[]) : void {static}
   }
   class "io.github.masmangan.assis.CollectRelationshipsVisitor" {
+    - {static} HAS_A : String {final}
+    - {static} IS_A_EXTENDS : String {final}
+    - {static} IS_A_IMPLEMENTS : String {final}
     ~ <<create>> CollectRelationshipsVisitor(idx : DeclaredIndex)
-    - assocTypeFrom(pkg : String, ownerFqn : String, vd : VariableDeclarator) : String
     - ownerFqnOf(fqn : String) : String {static}
+    - rawNameOf(type : Type) : String
+    - resolveAssocTarget(pkg : String, ownerFqn : String, type : Type) : String
+    - peelArrays(type : Type) : Type
     ~ emitAll(pw : PlantUMLWriter) : void
+    - emitAssociation(pw : PlantUMLWriter, ownerFqn : String, targetFqn : String, role : String, stereotypes : String) : void
     - emitAssociations(pw : PlantUMLWriter, pkg : String, ownerFqn : String, td : TypeDeclaration<?>) : void
+    - emitExtends(pw : PlantUMLWriter, pkg : String, subFqn : String, ext : ClassOrInterfaceType) : void
     - emitExtendsImplements(pw : PlantUMLWriter, pkg : String, subFqn : String, td : TypeDeclaration<?>) : void
+    - emitFieldAssociation(pw : PlantUMLWriter, pkg : String, ownerFqn : String, fd : FieldDeclaration) : void
+    - emitImplements(pw : PlantUMLWriter, pkg : String, subFqn : String, impl : ClassOrInterfaceType) : void
+    - emitRecordParameterAssociation(pw : PlantUMLWriter, pkg : String, ownerFqn : String, p : Parameter) : void
   }
   class "io.github.masmangan.assis.CollectTypesVisitor" {
     - pkg : String {final}
@@ -30,18 +40,20 @@ package "io.github.masmangan.assis" {
     - emitMethods(pw : PlantUMLWriter, methods : List<MethodDeclaration>) : void
     - emitRecordComponents(pw : PlantUMLWriter, ownerFqn : String, rd : RecordDeclaration) : void
     ~ emitType(pw : PlantUMLWriter, fqn : String, td : TypeDeclaration<?>) : void
+    - emitVariableDeclarator(pw : PlantUMLWriter, ownerFqn : String, fd : FieldDeclaration, vd : VariableDeclarator) : void
   }
   class "io.github.masmangan.assis.DeclaredIndex" {
+    - {static} PACKAGE_SEPARATOR : String {final}
     ~ byFqn : Map<String,TypeDeclaration<?>> {final}
     ~ fqnsByPkg : Map<String,List<String>>
+    ~ pkgByFqn : Map<String,String> {final}
     ~ uniqueBySimple : Map<String,String> {final}
     ~ build(cus : List<CompilationUnit>) : DeclaredIndex {static}
     ~ sortPackagesByNameFqn(byPkg : Map<String,List<String>>) : Map<String,List<String>> {static}
-    ~ packageOfFqn(fqn : String) : String {static}
     ~ pumlName(fqn : String) : String
     ~ qPuml(fqn : String) : String
     ~ resolveTypeName(ownerPkg : String, rawName : String) : String
-    - collectTypeRecursive(idx : DeclaredIndex, cu : CompilationUnit, pkg : String, td : TypeDeclaration<?>, ownerFqn : String) : void {static}
+    - collectTypeRecursive(idx : DeclaredIndex, pkg : String, td : TypeDeclaration<?>, ownerFqn : String, separator : String) : void {static}
   }
   class "io.github.masmangan.assis.GenerateClassDiagram" {
     ~ {static} logger : Logger {final}
@@ -57,7 +69,7 @@ package "io.github.masmangan.assis" {
     - addFooter(pw : PlantUMLWriter) : void {static}
     - addHeader(pw : PlantUMLWriter) : void {static}
     + generate(src : Path, out : Path) : void {static}
-    - writeDiagram(out : Path, cus : List<CompilationUnit>, idx : DeclaredIndex) : void {static}
+    - writeDiagram(out : Path, idx : DeclaredIndex) : void {static}
   }
   class "io.github.masmangan.assis.PlantUMLWriter" {
     - indent : int
