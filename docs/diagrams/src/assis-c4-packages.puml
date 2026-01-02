@@ -1,0 +1,29 @@
+@startuml
+title ASSIS - Code (Package View)
+
+package "io.github.masmangan.assis" as root {
+  package "cli" <<future>> as cli 
+  package "mojo" <<future>> as mojo
+  package "action" <<future>> as action
+  
+  package "core" as core
+  package "interp" <<future>> as interp
+  
+  package "byexample" <<testing>> as byexample
+  package "samples" <<testing>> as samples
+
+}
+
+package "com.github.javaparser" as jp <<external>>
+
+cli ..> core
+mojo ..> core
+action ..> core
+
+byexample ..> core
+samples ..> core
+
+core ..> jp
+core ..> interp
+
+@enduml

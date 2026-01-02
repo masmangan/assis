@@ -1,0 +1,44 @@
+@startuml
+'
+' ASSIS – C4 Component Diagram (C3)
+'
+' Author: Marco Aurélio Souza Mangan
+' Date: 2026-01-02
+' Project: ASSIS – Java-to-PlantUML Model Extraction
+' Repository: https://github.com/masmangan/assis
+'
+' This diagram describes the internal components of the ASSIS Core library.
+' ASSIS operates directly on the JavaParser model and does not build an
+' independent intermediate representation (IR).
+'
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title ASSIS - C3 Core Components
+
+Container(core, "ASSIS Core", "Java Library", "Interprets JavaParser models and emits PlantUML diagrams.")
+
+Component(source, "Source Discovery", "Locates and selects authored Java source files to be analyzed.")
+
+Component(parser, "Java Parsing Adapter", "Parses Java source files into abstract syntax trees using JavaParser.")
+
+Component(index, "Indexing and Resolution", "Builds symbol indexes, resolves fully-qualified names, and identifies relationships.")
+
+Component(interpret, "Interpretation and Slicing", "Selects views, applies visibility rules, and interprets JavaParser structures for diagram generation.")
+
+Component(emitter, "Diagram Emitter", "Traverses interpreted structures and emits ordered PlantUML text for UML and C4 diagrams.")
+
+System_Ext(javaparser, "JavaParser", "Third-party library providing the Java AST and symbol model.")
+
+Rel(core, source, "Uses")
+Rel(core, parser, "Uses")
+Rel(core, index, "Uses")
+Rel(core, interpret, "Uses")
+Rel(core, emitter, "Uses")
+
+Rel(source, parser, "Provides source files to")
+Rel(parser, index, "Provides ASTs to")
+Rel(index, interpret, "Provides resolved symbols to")
+Rel(interpret, emitter, "Provides interpreted view to")
+
+Rel(parser, javaparser, "Delegates parsing to")
+
+@enduml
