@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Marco Mangan. All rights reserved.
+ * Copyright (c) 2025-2026, Marco Mangan. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
@@ -22,23 +22,23 @@ public final class AssisApp {
 	 * Default source path. We are borrowing from Maven folder convention.
 	 */
 	private static final String SRC_MAIN_JAVA = "src/main/java";
-	
-    /**
-     * No constructor available.
-     */
-    private AssisApp() {
-    }
 
-    /**
-     * Generates PlantUML class diagrams from Java source code.
-     * 
-     * @param args not used
-     * @throws Exception error reading source file or writing diagrams
-     */
-    public static void main(String[] args) throws Exception {
+	/**
+	 * No constructor available.
+	 */
+	private AssisApp() {
+	}
+
+	/**
+	 * Generates PlantUML class diagrams from Java source code.
+	 * 
+	 * @param args not used
+	 * @throws Exception error reading source file or writing diagrams
+	 */
+	public static void main(String[] args) throws Exception {
 		Path src = Paths.get(SRC_MAIN_JAVA);
 		Path out = Paths.get(DOCS_UML_CLASS_DIAGRAM_PUML);
 		Files.createDirectories(out.getParent());
-        GenerateClassDiagram.generate(src, out);
-    }
+		GenerateClassDiagram.generate(src, out);
+	}
 }
