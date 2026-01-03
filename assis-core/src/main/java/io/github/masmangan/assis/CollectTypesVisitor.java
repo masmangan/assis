@@ -67,19 +67,34 @@ class CollectTypesVisitor {
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
 			if (cid.isInterface()) {
 				pw.beginInterface(pumlName, stereotypes);
+				emitFields(fqn, cid.getFields());
+				emitConstructors(cid.getConstructors());
+				emitMethods(cid.getMethods());
+
+				pw.endInterface(pumlName);
 			} else if (cid.isAbstract()) {
 				pw.beginAbstractClass(pumlName, stereotypes);
+				emitFields(fqn, cid.getFields());
+				emitConstructors(cid.getConstructors());
+				emitMethods(cid.getMethods());
+
+				pw.endAbstractClass(pumlName);
 			} else if (cid.isFinal()) {
 				pw.beginClass(pumlName, "<<final>>" + (stereotypes.isBlank() ? "" : " " + stereotypes.trim()));
+				emitFields(fqn, cid.getFields());
+				emitConstructors(cid.getConstructors());
+				emitMethods(cid.getMethods());
+
+				pw.endClass(pumlName);
 			} else {
 				pw.beginClass(pumlName, stereotypes);
+				emitFields(fqn, cid.getFields());
+				emitConstructors(cid.getConstructors());
+				emitMethods(cid.getMethods());
+
+				pw.endClass(pumlName);
 			}
 
-			emitFields(fqn, cid.getFields());
-			emitConstructors(cid.getConstructors());
-			emitMethods(cid.getMethods());
-
-			pw.endType();
 			return;
 		}
 
@@ -100,7 +115,7 @@ class CollectTypesVisitor {
 			emitConstructors(rd.getConstructors());
 			emitMethods(rd.getMethods());
 
-			pw.endType();
+			pw.endRecord(pumlName);
 			return;
 		}
 
@@ -110,13 +125,14 @@ class CollectTypesVisitor {
 			emitFields(fqn, ed.getFields());
 			emitConstructors(ed.getConstructors());
 			emitMethods(ed.getMethods());
-			pw.endType();
+			pw.endEnum(pumlName);
 			return;
 		}
 
 		if (td instanceof AnnotationDeclaration) {
 			pw.beginAnnotation(pumlName, stereotypes);
-			pw.endType();
+			// FIXME: Annotation has no components?
+			pw.endAnnotation(pumlName);
 			return;
 		}
 

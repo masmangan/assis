@@ -11,18 +11,22 @@ import java.util.Objects;
 /**
  * A writer that emits PlantUML statements to a {@link PrintWriter}.
  *
- * <p>Output is line-based: each call to {@link #println(String)} writes a single line.
- * This class also provides helper methods to emit common block constructs such as
- * packages and type declarations.
+ * <p>
+ * Output is line-based: each call to {@link #println(String)} writes a single
+ * line. This class also provides helper methods to emit common block constructs
+ * such as packages and type declarations.
  *
- * <p>Blocks started with {@code begin*} methods must be closed with a corresponding
- * {@code end*} method. While inside a package or type block, subsequent lines are
- * indented by two spaces per indentation level.
+ * <p>
+ * Blocks started with {@code begin*} methods must be closed with a
+ * corresponding {@code end*} method. While inside a package or type block,
+ * subsequent lines are indented by two spaces per indentation level.
  *
- * <p>This class performs no validation of PlantUML syntax and does not attempt to
+ * <p>
+ * This class performs no validation of PlantUML syntax and does not attempt to
  * enforce balanced blocks.
  *
- * <p>Closing this writer flushes its output but does not close the underlying
+ * <p>
+ * Closing this writer flushes its output but does not close the underlying
  * {@code PrintWriter}, since it is not owned by this instance.
  *
  * @since 0.9.1
@@ -42,7 +46,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @param out destination writer; must not be {@code null}
 	 * @throws NullPointerException if {@code out} is {@code null}
 	 */
-	public PlantUMLWriter(PrintWriter out) {
+	public PlantUMLWriter(final PrintWriter out) {
 		this.out = Objects.requireNonNull(out, "out");
 	}
 
@@ -52,7 +56,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @param line the line to write (without a line terminator); if {@code null},
 	 *             the string {@code "null"} is written
 	 */
-	public void println(String line) {
+	public void println(final String line) {
 		out.println(INDENT_UNIT.repeat(indentLevel) + String.valueOf(line));
 	}
 
@@ -71,8 +75,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	}
 
 	/**
-	 * Decreases the indentation level for subsequently written lines.
-	 * If the indentation level is already zero, this method has no effect.
+	 * Decreases the indentation level for subsequently written lines. If the
+	 * indentation level is already zero, this method has no effect.
 	 */
 	public void dedent() {
 		if (indentLevel > 0) {
@@ -90,7 +94,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	/**
 	 * Flushes this writer.
 	 *
-	 * <p>This method does not close the underlying {@code PrintWriter}.
+	 * <p>
+	 * This method does not close the underlying {@code PrintWriter}.
 	 */
 	@Override
 	public void close() {
@@ -103,28 +108,34 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @param name diagram name in the emitted statement; must not be {@code null}
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginDiagram(String name) {
+	public void beginDiagram(final String name) {
 		Objects.requireNonNull(name, "name");
-		println("@startuml " + name);		
+		println("@startuml " + name);
 	}
-	
+
 	/**
 	 * Ends the current diagram.
 	 *
-	 * <p>The caller is responsible for matching each
-	 * {@link #beginDiagram(String)} with exactly one call to this method.
+	 * <p>
+	 * The caller is responsible for matching each {@link #beginDiagram(String)}
+	 * with exactly one call to this method.
+	 * 
+	 * @param name package name to quote in the emitted statement; must not be
+	 *             {@code null}
 	 */
-	public void endDiagram() {
+	public void endDiagram(final String name) {
+		Objects.requireNonNull(name, "name");
 		println("@enduml");
 	}
-	
+
 	/**
 	 * Begins a PlantUML {@code package} block and increases indentation.
 	 *
-	 * @param name package name to quote in the emitted statement; must not be {@code null}
+	 * @param name package name to quote in the emitted statement; must not be
+	 *             {@code null}
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginPackage(String name) {
+	public void beginPackage(final String name) {
 		Objects.requireNonNull(name, "name");
 		println("package " + quote(name) + " {");
 		indent();
@@ -133,114 +144,185 @@ public final class PlantUMLWriter implements AutoCloseable {
 	/**
 	 * Ends the current package block.
 	 *
-	 * <p>This method decreases indentation by one level (if greater than zero) and
+	 * <p>
+	 * This method decreases indentation by one level (if greater than zero) and
 	 * emits {@code }}. The caller is responsible for matching each
 	 * {@link #beginPackage(String)} with exactly one call to this method.
+	 * 	
+	 * @param name package name to quote in the emitted statement; must not be
+	 *             {@code null}
 	 */
-	public void endPackage() {
-		endBlock();
+	public void endPackage(final String name) {
+		Objects.requireNonNull(name, "name");
+		dedent();
+		println("} /' @assis:end package " + quote(name) + " '/");
 	}
 
 	/**
 	 * Begins a PlantUML {@code class} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
-	 * @param stereotypes optional stereotypes (e.g., {@code <<Entity>>}); may be {@code null} or blank
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 * @param stereotypes optional stereotypes (e.g., {@code <<Entity>>}); may be
+	 *                    {@code null} or blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginClass(String name, String stereotypes) {
+	public void beginClass(final String name, final String stereotypes) {
 		beginType("class", name, stereotypes);
 	}
 
 	/**
+	 * Ends the current class block.
+	 * <p>
+	 * This method decreases indentation by one level (if greater than zero) and
+	 * emits {@code }}. The caller is responsible for matching each
+	 * {@link #beginClass(String)} with exactly one call to this method.
+	 * 
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 */
+	public void endClass(final String name) {
+		Objects.requireNonNull(name, "name");
+		dedent();
+		println("} /' @assis:end class " + quote(name) + " '/");
+	}
+	
+	/**
 	 * Begins a PlantUML {@code abstract class} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
-	 * @param stereotypes optional stereotypes (e.g., {@code <<Entity>>}); may be {@code null} or blank
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 * @param stereotypes optional stereotypes (e.g., {@code <<Entity>>}); may be
+	 *                    {@code null} or blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginAbstractClass(String name, String stereotypes) {
+	public void beginAbstractClass(final String name, final String stereotypes) {
 		beginType("abstract class", name, stereotypes);
 	}
 
 	/**
+	 * Ends the current abstract class block.
+	 * <p>
+	 * This method decreases indentation by one level (if greater than zero) and
+	 * emits {@code }}. The caller is responsible for matching each
+	 * {@link #beginAbstractClass(String)} with exactly one call to this method.
+	 * 
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 */
+	public void endAbstractClass(final String name) {
+		endType("class", name);
+	}	
+	
+	/**
 	 * Begins a PlantUML {@code interface} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
-	 * @param stereotypes optional stereotypes (e.g., {@code <<FunctionalInterface>>}); may be {@code null} or blank
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 * @param stereotypes optional stereotypes (e.g.,
+	 *                    {@code <<FunctionalInterface>>}); may be {@code null} or
+	 *                    blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginInterface(String name, String stereotypes) {
+	public void beginInterface(final String name, final String stereotypes) {
 		beginType("interface", name, stereotypes);
 	}
 
 	/**
+	 * Ends the current abstract class block.
+	 * <p>
+	 * This method decreases indentation by one level (if greater than zero) and
+	 * emits {@code }}. The caller is responsible for matching each
+	 * {@link #beginInterface(String)} with exactly one call to this method.
+	 * 
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
+	 */
+	public void endInterface(final String name) {
+		endType("interface", name);
+	}	
+	
+	/**
 	 * Begins a PlantUML {@code record} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
 	 * @param stereotypes optional stereotypes; may be {@code null} or blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginRecord(String name, String stereotypes) {
+	public void beginRecord(final String name, final String stereotypes) {
 		beginType("record", name, stereotypes);
 	}
 
+	public void endRecord(final String name) {
+		endType("record", name);
+	}	
+	
 	/**
 	 * Begins a PlantUML {@code enum} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
 	 * @param stereotypes optional stereotypes; may be {@code null} or blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginEnum(String name, String stereotypes) {
+	public void beginEnum(final String name, final String stereotypes) {
 		beginType("enum", name, stereotypes);
 	}
 
+	public void endEnum(final String name) {
+		endType("enum", name);
+	}	
+	
 	/**
 	 * Begins a PlantUML {@code annotation} block and increases indentation.
 	 *
-	 * @param name type name to quote in the emitted statement; must not be {@code null}
+	 * @param name        type name to quote in the emitted statement; must not be
+	 *                    {@code null}
 	 * @param stereotypes optional stereotypes; may be {@code null} or blank
 	 * @throws NullPointerException if {@code name} is {@code null}
 	 */
-	public void beginAnnotation(String name, String stereotypes) {
+	public void beginAnnotation(final String name, final String stereotypes) {
 		beginType("annotation", name, stereotypes);
 	}
+
+	public void endAnnotation(final String name) {
+		endType("interface", name);
+	}	
 	
 	/**
 	 * Ends the current type block started by a {@code begin*} type method.
 	 *
-	 * <p>This method decreases indentation by one level (if greater than zero) and
+	 * <p>
+	 * This method decreases indentation by one level (if greater than zero) and
 	 * emits {@code }}. The caller is responsible for balancing begin/end calls.
 	 */
-	public void endType() {
-		endBlock();
+	private void endType(final String keyword, final String name) {
+		endBlock(keyword, name);
 	}
 
-	private void beginType(String keyword, String name, String stereotypes) {
+	private void beginType(final String keyword, final String name, final String stereotypes) {
 		Objects.requireNonNull(keyword, "keyword");
 		Objects.requireNonNull(name, "name");
 		println(keyword + " " + quote(name) + stereotypesSuffix(stereotypes) + " {");
 		indent();
 	}
 
-	private void endBlock() {
+	private void endBlock(final String keyword, final String name) {
 		dedent();
-		println("}");
+		println("} /' @assis:end " + keyword + " " + quote(name) + "'/");
 	}
 
-	private static String quote(String name) {
+	private static String quote(final String name) {
 		return "\"" + name + "\"";
 	}
 
-	private static String stereotypesSuffix(String stereotypes) {
+	private static String stereotypesSuffix(final String stereotypes) {
 		if (stereotypes == null) {
 			return "";
 		}
-		String s = stereotypes.trim();
+		final String s = stereotypes.trim();
 		return s.isEmpty() ? "" : " " + s;
 	}
-
-
 
 }

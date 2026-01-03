@@ -142,7 +142,7 @@ public class GenerateClassDiagram {
 
 				if (!pkg.isEmpty()) {
 					pw.println();
-					pw.endPackage();
+					pw.endPackage(pkg);
 				}
 			}
 
@@ -151,7 +151,7 @@ public class GenerateClassDiagram {
 			pw.println();
 			pw.println("left to right direction");
 						
-			pw.endDiagram();
+			pw.endDiagram("class-diagram");
 			
 		} catch (IOException e) {
 			logger.log(Level.WARNING, () -> "Error writing diagram file: " + e.getLocalizedMessage());
