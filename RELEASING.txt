@@ -1,0 +1,134 @@
+ASSIS RELEASE CHECKLIST (monorepo)
+
+Target release version: 0.9.2
+Next development version: 0.9.3-SNAPSHOT
+
+⸻
+
+	0.	Prepare workspace
+
+⸻
+
+	git fetch --all --tags
+	git pull –rebase
+	•	Resolve any conflicts
+	git status must be clean
+	•	Confirm branch (usually main)
+
+If anything was merged or fixed:
+	git push
+	•	Wait for CI and Sonar to finish
+	•	Quality Gate must be green
+
+⸻
+
+	1.	Check tag name
+
+⸻
+
+	•	Tag format: vMAJOR.MINOR.PATCH (example: v0.9.1)
+	•	Ensure tag does not already exist:
+git tag –list “v0.9.1”
+
+If it exists, STOP and choose a new version.
+
+⸻
+
+	2.	Bump version (release)
+
+⸻
+
+	•	mvn versions:set -DnewVersion=0.9.1
+	•	mvn versions:commit
+	•	Review changes:
+git diff
+
+⸻
+
+	3.	Verify build (local gate)
+
+⸻
+
+	•	mvn -q clean package
+
+If this fails, STOP and fix before continuing.
+
+⸻
+
+	4.	Commit release version
+
+⸻
+
+	•	git add pom.xml */pom.xml
+	•	git commit -m “Release 0.9.1”
+
+⸻
+
+	5.	Push and wait for CI
+
+⸻
+
+	•	git push
+	•	Wait for CI build and Sonar analysis
+	•	Ensure Quality Gate is passed
+
+⸻
+
+	6.	Tag release
+
+⸻
+
+	•	git tag -a v0.9.1 -m “ASSIS release 0.9.1”
+(or: git tag -s v0.9.1 -m “ASSIS release 0.9.1” if using GPG)
+	•	git push origin v0.9.1
+
+⸻
+
+	7.	Build from tag (recommended)
+
+⸻
+
+	•	git checkout v0.9.1
+	•	mvn -q clean package
+
+Artifacts:
+	•	assis-core/target/assis-core-0.9.1.jar
+	•	assis-cli/target/assis-cli-0.9.1.jar
+
+⸻
+
+	8.	Generate checksums
+
+⸻
+
+	•	shasum -a 256 assis-core/target/assis-core-0.9.1.jar > assis-core-0.9.1.jar.sha256
+	•	shasum -a 256 assis-cli/target/assis-cli-0.9.1.jar  > assis-cli-0.9.1.jar.sha256
+
+(Optional)
+	•	Sign checksum files with GPG.
+
+⸻
+
+	9.	Publish release
+
+⸻
+
+	•	Create GitHub Release for tag v0.9.1
+	•	Upload:
+	•	assis-core-0.9.1.jar
+	•	assis-cli-0.9.1.jar
+	•	*.sha256 (and signatures, if any)
+
+⸻
+
+	10.	Return to development
+
+⸻
+
+	•	git checkout main
+	•	mvn versions:set -DnewVersion=0.9.2-SNAPSHOT
+	•	mvn versions:commit
+	•	mvn -q clean package
+	•	git add pom.xml */pom.xml
+	•	git commit -m “Start 0.9.2-SNAPSHOT”
+	•	git push
