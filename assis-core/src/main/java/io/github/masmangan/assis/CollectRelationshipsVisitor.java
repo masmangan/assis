@@ -163,12 +163,12 @@ class CollectRelationshipsVisitor {
 			}
 		} else if (td instanceof RecordDeclaration rd) {
 			for (Parameter p : rd.getParameters()) {
-				emitRecordParameterAssociation(pw, pkg, ownerFqn, p);
+				emitRecordParameterAssociation(pkg, ownerFqn, p);
 			}
 		}
 	}
 
-	private void emitRecordParameterAssociation(PlantUMLWriter pw, String pkg, String ownerFqn, Parameter p) {
+	private void emitRecordParameterAssociation(String pkg, String ownerFqn, Parameter p) {
 		String target = resolveAssocTarget(pkg, ownerFqn, p.getType());
 		if (target != null) {
 			String st = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p));

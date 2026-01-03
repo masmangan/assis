@@ -182,9 +182,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 *                    {@code null}
 	 */
 	public void endClass(final String name) {
-		Objects.requireNonNull(name, "name");
-		dedent();
-		println("} /' @assis:end class " + quote(name) + " '/");
+		endType("class", name);
 	}
 	
 	/**
@@ -211,7 +209,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 *                    {@code null}
 	 */
 	public void endAbstractClass(final String name) {
-		endType("class", name);
+		endType("abstract class", name);
 	}	
 	
 	/**
@@ -287,7 +285,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	}
 
 	public void endAnnotation(final String name) {
-		endType("interface", name);
+		endType("annotation", name);
 	}	
 	
 	/**
