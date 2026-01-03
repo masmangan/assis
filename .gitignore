@@ -2,25 +2,21 @@
 *.class
 
 # PlantUML
-/tools/plantuml/
-*.jar
+**/tools/plantuml/
 
 # Maven  
-/target/
+**/target/
 
 # IDEs
-/.idea/
-/*.iml
-/.classpath
-/.project
-/.settings/
-/.vscode/
+**/.idea/
+**/*.iml
+**/.classpath
+**/.project
+**/.settings/
+**/.vscode/
 
 # Log file
 *.log
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
 
 # Package Files #
 *.jar
@@ -35,8 +31,8 @@
 hs_err_pid*
 replay_pid*
 
-# ASSIS SVG output
-/docs/diagrams/out/
+# PlantUML and ASSIS SVG output
+**/docs/diagrams/out/
 
 # OS
 .DS_Store
