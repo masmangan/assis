@@ -30,7 +30,7 @@ class AssisAppTest {
 	Path tempDir;
 
 	@Test
-	void generatesDiagramFromHelloUsingSourcepathAndD() throws Exception {
+	void generatesDiagramFromHelloUsingSourcepathAndOutputDirectory() throws Exception {
 		Path srcMainJava = tempDir.resolve("src/somewhere");
 		Files.createDirectories(srcMainJava);
 
@@ -63,7 +63,7 @@ class AssisAppTest {
 
 	@ResourceLock("ASSIS_DEFAULT_OUTPUT")
 	@Test
-	void generatesDiagramFromHelloUsingSourcepathAndNoD() throws Exception {
+	void generatesDiagramFromHelloUsingSourcepathOnly() throws Exception {
 		Path sourcePath = tempDir.resolve("src");
 		Files.createDirectories(sourcePath);
 
@@ -77,10 +77,11 @@ class AssisAppTest {
 
 		Files.deleteIfExists(pumlPath);
 
-		var outBuf = new ByteArrayOutputStream();
-		var errBuf = new ByteArrayOutputStream();
-
-		try {
+		try (
+				var outBuf = new ByteArrayOutputStream();
+				var errBuf = new ByteArrayOutputStream();
+				
+				) {
 			int code = AssisApp.run(new String[] { "-sourcepath", sourcePath.toString() },
 					new PrintStream(outBuf, true, UTF_8), new PrintStream(errBuf, true, UTF_8));
 
@@ -91,7 +92,7 @@ class AssisAppTest {
 					"Expected output PUML file to exist: " + pumlPath + "\n" + debugBuffers(outBuf, errBuf));
 
 			String puml = Files.readString(pumlPath, UTF_8);
-			assertTrue(puml.contains("Hello") || puml.contains("\"Hello\""),
+			assertTrue(puml.contains("Hello"),
 					"Expected diagram to mention Hello. Content:\n" + puml);
 		} finally {
 			try {
@@ -102,8 +103,42 @@ class AssisAppTest {
 		}
 	}
 
+	@ResourceLock("ASSIS_DEFAULT_OUTPUT")
 	@Test
-	void generatesDiagramFromCompositeSourcepathAndD() throws Exception {
+	void generatesDiagramFromDefaults() throws Exception {
+		Path expectedOut = Path.of("docs/diagrams/src").toAbsolutePath().normalize();
+		Path pumlPath = expectedOut.resolve(PUML_FILE);
+
+		Files.deleteIfExists(pumlPath);
+
+		try (
+				var outBuf = new ByteArrayOutputStream();
+				var errBuf = new ByteArrayOutputStream();
+				
+				) {
+			int code = AssisApp.run(new String[] { },
+					new PrintStream(outBuf, true, UTF_8), new PrintStream(errBuf, true, UTF_8));
+
+			assertEquals(0, code, debugBuffers(outBuf, errBuf));
+			assertTrue(Files.exists(expectedOut),
+					"Expected default output directory to exist: " + expectedOut + "\n" + debugBuffers(outBuf, errBuf));
+			assertTrue(Files.exists(pumlPath),
+					"Expected output PUML file to exist: " + pumlPath + "\n" + debugBuffers(outBuf, errBuf));
+
+			String puml = Files.readString(pumlPath, UTF_8);
+			assertTrue(puml.contains("AssisApp"),
+					"Expected diagram to mention Hello. Content:\n" + puml);
+		} finally {
+			try {
+				Files.deleteIfExists(pumlPath);
+			} catch (Exception ignored) {
+				throw new IllegalStateException("Clean up failed.");
+			}
+		}
+	}	
+	
+	@Test
+	void generatesDiagramFromCompositeSourcepathAndOutputDirectory() throws Exception {
 		Path sp1 = tempDir.resolve("p1");
 		Path sp2 = tempDir.resolve("p2");
 		Files.createDirectories(sp1);
