@@ -60,21 +60,32 @@ public class TestWorkbench {
         return targetDir;
     }
 
-    static String generatePumlFromSample(String rp1, String rp2, Path tempDir, String tempFolderName) throws IOException, URISyntaxException {
-        Path pa = copySampleProjectToTemp(rp1, tempDir.resolve(tempFolderName+"1"));
-        Path pb = copySampleProjectToTemp(rp2, tempDir.resolve(tempFolderName+ "2"));
+    static String generatePumlFromSample(String rp1, String rp2, Path tempDir, String tempFolderName)
+            throws IOException, URISyntaxException {
 
-        Path outputFile = tempDir.resolve("diagram.puml");
-        GenerateClassDiagram.generate(Set.of(pa, pb), outputFile);
-        //saveToGallery(outputFile, rp1, tempFolderName);
+        Path pa = copySampleProjectToTemp(rp1, tempDir.resolve(tempFolderName + "1"));
+        Path pb = copySampleProjectToTemp(rp2, tempDir.resolve(tempFolderName + "2"));
+
+        Path outDir = tempDir.resolve("out-" + tempFolderName);
+        Files.createDirectories(outDir);
+
+        GenerateClassDiagram.generate(Set.of(pa, pb), outDir);
+
+        Path outputFile = outDir.resolve("class-diagram.puml");
         return Files.readString(outputFile, StandardCharsets.UTF_8);
-	}
+    }
     
     static String generatePumlFromSample(String resourcePath, Path tempDir, String tempFolderName) throws Exception {
         Path sampleRoot = copySampleProjectToTemp(resourcePath, tempDir.resolve(tempFolderName));
-        Path outputFile = tempDir.resolve("diagram.puml");
-        GenerateClassDiagram.generate(Set.of(sampleRoot), outputFile);
+
+        Path outDir = tempDir.resolve("out-" + tempFolderName);
+        Files.createDirectories(outDir);
+
+        GenerateClassDiagram.generate(Set.of(sampleRoot), outDir);
+
+        Path outputFile = outDir.resolve("class-diagram.puml");
         saveToGallery(outputFile, resourcePath, tempFolderName);
+
         return Files.readString(outputFile, StandardCharsets.UTF_8);
     }
 
