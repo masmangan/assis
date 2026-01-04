@@ -27,14 +27,21 @@ class GenerateClassDiagramDeterminismSampleTest {
                 tempDir.resolve("enumvalues")
         );
 
-        Path out1 = tempDir.resolve("diagram-1.puml");
-        Path out2 = tempDir.resolve("diagram-2.puml");
+        Path outDir1 = tempDir.resolve("out-" + "diagram1");
+        Files.createDirectories(outDir1);
+ 
+        Path outDir2 = tempDir.resolve("out-" + "diagram2");
+        Files.createDirectories(outDir2);
 
-        GenerateClassDiagram.generate(Set.of(sampleRoot), out1);
-        GenerateClassDiagram.generate(Set.of(sampleRoot), out2);
 
-        String a = Files.readString(out1, StandardCharsets.UTF_8);
-        String b = Files.readString(out2, StandardCharsets.UTF_8);
+        GenerateClassDiagram.generate(Set.of(sampleRoot), outDir1);
+        GenerateClassDiagram.generate(Set.of(sampleRoot), outDir2);
+
+        Path outputFile1 = outDir1.resolve("class-diagram.puml");
+        Path outputFile2 = outDir2.resolve("class-diagram.puml");
+
+        String a = Files.readString(outputFile1, StandardCharsets.UTF_8);
+        String b = Files.readString(outputFile2, StandardCharsets.UTF_8);
 
         assertEquals(a, b);
     }
