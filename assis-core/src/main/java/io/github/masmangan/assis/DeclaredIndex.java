@@ -78,7 +78,6 @@ class DeclaredIndex {
 			}
 		}
 
-		//return idx;
 	}
 
 	/**
