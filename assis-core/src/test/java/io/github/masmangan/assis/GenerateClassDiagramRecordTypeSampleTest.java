@@ -25,5 +25,18 @@ class GenerateClassDiagramRecordTypeSampleTest {
 
         TestWorkbench.assertAnyLineContainsAll(puml, "x", ":", "int");
         TestWorkbench.assertAnyLineContainsAll(puml, "y", ":", "int");
+
+        // --- new asserts for Outer.Inner component in record R ---
+
+        TestWorkbench.assertPumlContains(puml, "record \"samples.records.R\"");
+        TestWorkbench.assertPumlContains(puml, "class \"samples.records.Outer$Inner\"");
+
+        // nesting edge Outer +-- Outer$Inner
+        TestWorkbench.assertPumlContains(puml,
+                "\"samples.records.Outer\" +-- \"samples.records.Outer$Inner\"");
+
+        // association edge from record R to Outer$Inner with role "x"
+        TestWorkbench.assertAnyLineContainsAll(puml,
+                "\"samples.records.R\"", "-->", "\"samples.records.Outer$Inner\"", ": x");
     }
 }
