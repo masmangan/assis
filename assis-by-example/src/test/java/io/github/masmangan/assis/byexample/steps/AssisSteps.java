@@ -62,9 +62,9 @@ public class AssisSteps {
 
 		Path outDir = tempProjectDir.resolve("out");
 		Files.createDirectories(outDir);
-		Path outFile = outDir.resolve("class-diagram.puml");
+		//Path outFile = outDir.resolve("class-diagram.puml");
 
-		GenerateClassDiagram.generate(Set.of(tempProjectDir), outFile);
+		GenerateClassDiagram.generate(Set.of(tempProjectDir), outDir);
 
 		try (var stream = Files.list(outDir)) {
 			Path puml = stream.filter(p -> p.getFileName().toString().endsWith(".puml")).findFirst()
