@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -19,92 +20,106 @@ import org.junit.jupiter.api.io.TempDir;
 
 class AssisAppTest {
 
-    @TempDir
-    Path tempDir;
+	@TempDir
+	Path tempDir;
 
-    @Test
-    void generatesDiagramFromHelloUsingSourcepathAndD() throws Exception {
-        Path srcMainJava = tempDir.resolve("src/main/java");
-        Files.createDirectories(srcMainJava);
+	@Test
+	void generatesDiagramFromHelloUsingSourcepathAndD() throws Exception {
+		Path srcMainJava = tempDir.resolve("src/main/java");
+		Files.createDirectories(srcMainJava);
 
-        Files.writeString(
-            srcMainJava.resolve("Hello.java"),
-            """
-            public class Hello {
-            }
-            """,
-            UTF_8
-        );
+		Files.writeString(srcMainJava.resolve("Hello.java"), """
+				public class Hello {
+				}
+				""", UTF_8);
 
-        Path out = tempDir.resolve("docs/diagrams/src/");
-        Files.createDirectories(out.getParent());
+		Path out = tempDir.resolve("docs/diagrams/src/");
+		Files.createDirectories(out.getParent());
 
-        var outBuf = new ByteArrayOutputStream();
-        var errBuf = new ByteArrayOutputStream();
+		var outBuf = new ByteArrayOutputStream();
+		var errBuf = new ByteArrayOutputStream();
 
+		int code = AssisApp.run(new String[] { "-sourcepath", srcMainJava.toString(), "-d", out.toString() },
+				new PrintStream(outBuf, true, UTF_8), new PrintStream(errBuf, true, UTF_8));
 
-        int code = AssisApp.run(
-            new String[] { "-sourcepath", srcMainJava.toString(), "-d", out.toString() },
-            new PrintStream(outBuf, true, UTF_8),
-            new PrintStream(errBuf, true, UTF_8)
-        );
+		assertEquals(0, code, "stderr:\n" + errBuf.toString(UTF_8));
+		assertTrue(Files.exists(out), "Expected output file to exist: " + out);
 
-        assertEquals(0, code, "stderr:\n" + errBuf.toString(UTF_8));
-        assertTrue(Files.exists(out), "Expected output file to exist: " + out);
+		String puml = Files.readString(out.resolve("class-diagram.puml"), UTF_8);
+		assertTrue(puml.contains("Hello") || puml.contains("\"Hello\""),
+				"Expected diagram to mention Hello. Content:\n" + puml);
+	}
 
-        String puml = Files.readString(out.resolve("class-diagram.puml"), UTF_8);
-        assertTrue(
-            puml.contains("Hello") || puml.contains("\"Hello\""),
-            "Expected diagram to mention Hello. Content:\n" + puml
-        );
-    }
+	@Test
+	void generatesDiagramFromCompositeSourcepathAndD() throws Exception {
+		Path sp1 = tempDir.resolve("p1");
+		Path sp2 = tempDir.resolve("p2");
 
-    @Test
-    void invalidArgumentReturnsNonZero() throws Exception {
-        var outBuf = new ByteArrayOutputStream();
-        var errBuf = new ByteArrayOutputStream();
+		Files.createDirectories(sp1);
+		Files.createDirectories(sp2);
 
-        int code = AssisApp.run(
-            new String[] { "-nope" },
-            new PrintStream(outBuf, true, UTF_8),
-            new PrintStream(errBuf, true, UTF_8)
-        );
+		Files.writeString(sp1.resolve("Hello.java"), """
+				public class Hello {
+				}
+				""", UTF_8);
+		Files.writeString(sp2.resolve("World.java"), """
+				public class World {
+				}
+				""", UTF_8);
+		Path out = tempDir.resolve("docs/diagrams/src/");
+		Files.createDirectories(out.getParent());
 
-        assertTrue(code != 0, "Expected non-zero exit code for invalid arg");
-        String err = errBuf.toString(UTF_8);
-        assertTrue(err.contains("Unknown option"), "Expected error message. Got:\n" + err);
-    }
-    
-    @Test
-    void checkHelpKnobExists() throws Exception {
-        var outBuf = new ByteArrayOutputStream();
-        var errBuf = new ByteArrayOutputStream();
+		var outBuf = new ByteArrayOutputStream();
+		var errBuf = new ByteArrayOutputStream();
 
-        int code = AssisApp.run(
-            new String[] { "--help" },
-            new PrintStream(outBuf, true, UTF_8),
-            new PrintStream(errBuf, true, UTF_8)
-        );
+		int code = AssisApp.run(new String[] { "-sourcepath", sp1.toString() + File.pathSeparator + sp2.toString(),
+				"-d", out.toString() }, new PrintStream(outBuf, true, UTF_8), new PrintStream(errBuf, true, UTF_8));
 
-        assertTrue(code == 0, "Expected non-zero exit code for invalid arg");
-        String out = outBuf.toString(UTF_8);
-        assertTrue(out.contains("Usage"), "Expected error message. Got:\n" + out);
-    }
-    
-    @Test
-    void checkHelpVersionExists() throws Exception {
-        var outBuf = new ByteArrayOutputStream();
-        var errBuf = new ByteArrayOutputStream();
+		assertEquals(0, code, "stderr:\n" + errBuf.toString(UTF_8));
+		assertTrue(Files.exists(out), "Expected output file to exist: " + out);
 
-        int code = AssisApp.run(
-            new String[] { "--version" },
-            new PrintStream(outBuf, true, UTF_8),
-            new PrintStream(errBuf, true, UTF_8)
-        );
+		String puml = Files.readString(out.resolve("class-diagram.puml"), UTF_8);
+		assertTrue(puml.contains("Hello") || puml.contains("\"Hello\""),
+				"Expected diagram to mention Hello. Content:\n" + puml);
+	}
 
-        assertTrue(code == 0, "Expected non-zero exit code for invalid arg");
-        String out = outBuf.toString(UTF_8);
-        assertTrue(out.contains("ASSIS"), "Expected error message. Got:\n" + out);
-    }
-    
+	@Test
+	void invalidArgumentReturnsNonZero() throws Exception {
+		var outBuf = new ByteArrayOutputStream();
+		var errBuf = new ByteArrayOutputStream();
+
+		int code = AssisApp.run(new String[] { "-nope" }, new PrintStream(outBuf, true, UTF_8),
+				new PrintStream(errBuf, true, UTF_8));
+
+		assertTrue(code != 0, "Expected non-zero exit code for invalid arg");
+		String err = errBuf.toString(UTF_8);
+		assertTrue(err.contains("Unknown option"), "Expected error message. Got:\n" + err);
+	}
+
+	@Test
+	void checkHelpKnobExists() {
+		var outBuf = new ByteArrayOutputStream();
+		var errBuf = new ByteArrayOutputStream();
+
+		int code = AssisApp.run(new String[] { "--help" }, new PrintStream(outBuf, true, UTF_8),
+				new PrintStream(errBuf, true, UTF_8));
+
+		assertEquals(0, code, "Expected non-zero exit code for invalid arg");
+		String out = outBuf.toString(UTF_8);
+		assertTrue(out.contains("Usage"), "Expected error message. Got:\n" + out);
+	}
+
+	@Test
+	void checkHelpVersionExists() {
+		var outBuf = new ByteArrayOutputStream();
+		var errBuf = new ByteArrayOutputStream();
+
+		int code = AssisApp.run(new String[] { "--version" }, new PrintStream(outBuf, true, UTF_8),
+				new PrintStream(errBuf, true, UTF_8));
+
+		assertEquals(0, code, "Expected non-zero exit code for invalid arg");
+		String out = outBuf.toString(UTF_8);
+		assertTrue(out.contains("ASSIS"), "Expected error message. Got:\n" + out);
+	}
+
 }
