@@ -71,7 +71,7 @@ public class GenerateClassDiagram {
 		DeclaredIndex index = new DeclaredIndex();
 		List<CompilationUnit> cus = new ArrayList<>();
 
-		logger.log(Level.INFO, () -> "Scanning started" );
+		logger.log(Level.INFO, () -> "Scanning started");
 
 		for (Path src : sourceRoots) {
 
@@ -91,25 +91,27 @@ public class GenerateClassDiagram {
 		}
 		DeclaredIndex.fill(index, cus);
 
-		logger.log(Level.FINE, () -> "**     byFqn    ** "+ index.byFqn.toString());
-		logger.log(Level.FINE, () -> "**   fqnsByPkg  ** "+ index.fqnsByPkg.toString());
-		logger.log(Level.FINE, () -> "**   pkgByFqn   ** "+ index.pkgByFqn.toString());
-		logger.log(Level.FINE, () -> "**uniqueBySimple** "+ index.uniqueBySimple.toString());
+		logger.log(Level.FINE, () -> "**     byFqn    ** " + index.byFqn.toString());
+		logger.log(Level.FINE, () -> "**   fqnsByPkg  ** " + index.fqnsByPkg.toString());
+		logger.log(Level.FINE, () -> "**   pkgByFqn   ** " + index.pkgByFqn.toString());
+		logger.log(Level.FINE, () -> "**uniqueBySimple** " + index.uniqueBySimple.toString());
 
-		
-		
-		logger.log(Level.FINE, () -> "  **CUS** "+cus.toString());
+		logger.log(Level.FINE, () -> "  **CUS** " + cus.toString());
 
-		logger.log(Level.INFO, () -> "Writing " + outDir);
+		final Path outputFile;
 
 		// Gambiarra para o ASSIS CLI
 		if (Files.isDirectory(outDir)) {
-			Path outputFile = outDir.resolve("class-diagram.puml");
-			writeDiagram(outputFile, index);
-
+			logger.log(Level.INFO, () -> "Appending output file name ");
+			outputFile = outDir.resolve("class-diagram.puml");
 		} else {
-			writeDiagram(outDir, index);
+			logger.log(Level.SEVERE, () -> "***OUTDIR MUST BE A DIR!***");
+			outputFile = outDir;
 		}
+
+		logger.log(Level.INFO, () -> "Writing " + outputFile);
+
+		writeDiagram(outputFile, index);
 
 	}
 
