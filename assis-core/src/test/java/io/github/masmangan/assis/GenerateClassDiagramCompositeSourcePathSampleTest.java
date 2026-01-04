@@ -23,7 +23,7 @@ class GenerateClassDiagramCompositeSourcePathSampleTest {
 
 	@Test
 	void compositeSourcePath_scansBothRoots_paThenPb() throws Exception {
-		String puml = generatePumlFromSample("samples/sp/pb", "samples/sp/pa", tempDir, "composite");
+		String puml = generatePumlFromSample("samples/sp/pa", "samples/sp/pb", tempDir, "composite");
 
 		assertPumlContainsName(puml, "pa.A");
 		assertPumlContainsName(puml, "pb.B");
