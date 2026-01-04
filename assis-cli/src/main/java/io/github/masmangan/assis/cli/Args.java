@@ -5,79 +5,139 @@
 
 package io.github.masmangan.assis.cli;
 
+import java.io.File;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
+/**
+ * 
+ */
 final class CliArgs {
 
-    enum Mode { RUN, HELP, VERSION }
+	enum Mode {
+		RUN, HELP, VERSION
+	}
 
-    final Mode mode;
-    final Path sourcePath; // null => auto-discovery
-    final Path outPath;    // null => default docs/diagrams/src/class-diagram.puml
+	final Mode mode;
 
-    private CliArgs(Mode mode, Path sourcePath, Path outPath) {
-        this.mode = mode;
-        this.sourcePath = sourcePath;
-        this.outPath = outPath;
-    }
+	/**
+	 * Null => auto-discovery. Otherwise: directories-only, potentially multiple
+	 * entries.
+	 */
+	final Set<Path> sourceRoots;
 
-    static CliArgs parse(String[] args) {
-        if (args == null) args = new String[0];
+	/**
+	 * Null => default docs/diagrams/src/
+	 */
+	final Path outDir;
 
-        Path src = null;
-        Path out = null;
+	private CliArgs(Mode mode, Set<Path> sourceRoots, Path outDir) {
+		this.mode = mode;
+		this.sourceRoots = sourceRoots;
+		this.outDir = outDir;
+	}
 
-        for (int i = 0; i < args.length; i++) {
-            String a = args[i];
+	static CliArgs parse(String[] args) {
+		if (args == null)
+			args = new String[0];
 
-            if ("--help".equals(a) || "-help".equals(a) || "-?".equals(a)) {
-                return new CliArgs(Mode.HELP, null, null);
-            }
+		Set<Path> srcRoots = null;
+		Path outDir = null;
 
-            if ("--version".equals(a) || "-version".equals(a)) {
-                return new CliArgs(Mode.VERSION, null, null);
-            }
+		for (int i = 0; i < args.length; i++) {
+			String a = args[i];
 
-            if ("--source-path".equals(a) || "-sourcepath".equals(a)) {
-                requireValue(args, i, a);
-                src = Path.of(args[++i]);
-                continue;
-            }
+			if ("--help".equals(a) || "-help".equals(a) || "-?".equals(a)) {
+				return new CliArgs(Mode.HELP, null, null);
+			}
 
-            if ("-d".equals(a)) {
-                requireValue(args, i, a);
-                out = Path.of(args[++i]);
-                continue;
-            }
+			if ("--version".equals(a) || "-version".equals(a)) {
+				return new CliArgs(Mode.VERSION, null, null);
+			}
 
-            throw new IllegalArgumentException("Unknown option: " + a + "\n\n" + usage());
-        }
+			if ("--source-path".equals(a) || "-sourcepath".equals(a)) {
+				requireValue(args, i, a);
+				String raw = args[++i];
+			    Set<Path> parsed = parsePathList(raw);
 
-        return new CliArgs(Mode.RUN, src, out);
-    }
+			    if (srcRoots == null) {
+			        srcRoots = new LinkedHashSet<>();
+			    }
+			    srcRoots.addAll(parsed);
+			    continue;			
+			} else if ("-d".equals(a)) {
+			    requireValue(args, i, a);
 
-    private static void requireValue(String[] args, int i, String opt) {
-        if (i + 1 >= args.length) {
-            throw new IllegalArgumentException("Missing value for " + opt + "\n\n" + usage());
-        }
-    }
+			    if (outDir != null) {
+			        throw new IllegalArgumentException("Duplicate option: -d\n\n" + usage());
+			    }
 
-    static String usage() {
-        return String.join("\n",
-            "Usage: assis <options>",
-            "",
-            "Options (javac-like):",
-            "  --help, -help, -?                 Print this help message",
-            "  --version, -version               Version information",
-            "  --source-path <path>, -sourcepath <path>",
-            "                                   Specify where to find input source files",
-            "  -d <file>                          Output .puml destination file",
-            "",
-            "Defaults:",
-            "  source: auto-discovery tries src/main/java, then src, then .",
-            "  out:    docs/diagrams/src/class-diagram.puml"
-        );
-    }
+			    outDir = Path.of(args[++i]);
+			    continue;
+			} else {
+				throw new IllegalArgumentException("Unknown option: " + a + "\n\n" + usage());
+			}
+		}
 
-    private CliArgs() { throw new AssertionError(); }
+		return new CliArgs(Mode.RUN, srcRoots, outDir);
+	}
+
+	private static Set<Path> parsePathList(String raw) {
+		if (raw == null || raw.isBlank()) {
+			throw new IllegalArgumentException("Empty value for --source-path/-sourcepath\n\n" + usage());
+		}
+
+		String sep = File.pathSeparator;
+		String[] parts = raw.split(java.util.regex.Pattern.quote(sep));
+
+		LinkedHashSet<Path> out = new LinkedHashSet<>();
+		for (String p : parts) {
+			if (p == null || p.isBlank())
+				continue;
+			out.add(Path.of(p.trim()));
+		}
+
+		if (out.isEmpty()) {
+			throw new IllegalArgumentException("No source directories provided in --source-path\n\n" + usage());
+		}
+
+		return out;
+	}
+
+	private static void requireValue(String[] args, int i, String opt) {
+		if (i + 1 >= args.length) {
+			throw new IllegalArgumentException("Missing value for " + opt + "\n\n" + usage());
+		}
+	}
+
+	static String usage() {
+		return """
+				Usage: assis <options>
+
+				where possible options include:
+				  --help, -help, -?
+				        Print this help message
+				  --version, -version
+				        Version information
+				  --source-path <path>, -sourcepath <path>
+				        Specify where to find input source files
+				  -d <directory>
+				        Specify where to place generated .puml files
+
+				Defaults:
+
+				  Source path auto-discovery defaults to the first available:
+				      --source-path src/main/java/
+				      --source-path src/
+				      --source-path .
+
+				  Generation defaults to:
+				      -d docs/diagrams/src/
+				""";
+	}
+
+	private CliArgs() {
+		throw new AssertionError();
+	}
 }

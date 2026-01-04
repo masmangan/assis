@@ -8,7 +8,9 @@ package io.github.masmangan.assis.cli;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -23,15 +25,34 @@ final class SourceLocator {
     private static final List<Path> CANDIDATES = List.of(MAVEN, SRC, DOT);
 
     /**
-     * Resolves the source path.
-     * - If requested != null: validates it (must exist, be dir, contain .java)
-     * - Else: auto-discovery tries src/main/java, then src, then .
+     * Resolves source roots (directories only).
+     *
+     * If requested != null:
+     *   - validates each directory exists and contains at least one .java somewhere under it.
+     *   - returns normalized absolute paths (stable for downstream).
+     *
+     * Else:
+     *   - auto-discovery chooses first of: src/main/java, src, .
+     *   - returns singleton set containing the chosen directory (normalized absolute).
      */
-    static Path resolve(Path requested) throws IOException {
+    static Set<Path> resolve(Set<Path> requested) throws IOException {
         if (requested != null) {
-            LOG.info(() -> "Using explicit source path (javac-like): " + requested.toAbsolutePath());
-            validateHasJavaOrThrow(requested, /*isExplicit*/ true);
-            return requested;
+            LinkedHashSet<Path> out = new LinkedHashSet<>();
+            for (Path dir : requested) {
+                if (dir == null) continue;
+
+                Path abs = dir.toAbsolutePath().normalize();
+                LOG.info(() -> "Using explicit source path (javac-like): " + abs);
+
+                validateHasJavaOrThrow(abs, /*isExplicit*/ true);
+                out.add(abs);
+            }
+
+            if (out.isEmpty()) {
+                throw new IllegalArgumentException("No valid source directories provided.");
+            }
+
+            return out;
         }
 
         boolean mavenDirExists = Files.isDirectory(MAVEN);
@@ -39,14 +60,14 @@ final class SourceLocator {
         boolean dotHasJava = Files.isDirectory(DOT) && containsJava(DOT);
 
         for (Path candidate : CANDIDATES) {
-            LOG.info(() -> "Trying source directory: " + candidate.toAbsolutePath());
+            Path abs = candidate.toAbsolutePath().normalize();
+            LOG.info(() -> "Trying source directory: " + abs);
 
             if (!Files.isDirectory(candidate)) continue;
             if (!containsJava(candidate)) continue;
 
-            LOG.info(() -> "Using source directory: " + candidate.toAbsolutePath());
+            LOG.info(() -> "Using source directory: " + abs);
 
-            // Pedagogical logs
             if (candidate.equals(DOT)) {
                 LOG.warning(() ->
                     "Falling back to '.' as source root. " +
@@ -62,7 +83,7 @@ final class SourceLocator {
                 }
             }
 
-            return candidate;
+            return Set.of(abs);
         }
 
         LOG.severe("No Java source directory found. Tried: src/main/java, src, .");
