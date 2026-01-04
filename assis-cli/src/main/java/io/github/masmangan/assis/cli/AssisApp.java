@@ -5,15 +5,9 @@
 
 package io.github.masmangan.assis.cli;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -24,145 +18,82 @@ import io.github.masmangan.assis.GenerateClassDiagram;
  */
 public final class AssisApp {
 
-    private static final Logger LOG = Logger.getLogger(AssisApp.class.getName());
+	private static final Logger LOG = Logger.getLogger(AssisApp.class.getName());
 
-    /**
-     * Default output directory (PlantUML/Jebbs convention).
-     */
-    static final String DEFAULT_OUT_DIR = "docs/diagrams/src";
+	/**
+	 * Default output directory (PlantUML/Jebbs convention).
+	 */
+	static final String DEFAULT_OUT_DIR = "docs/diagrams/src";
 
-    private AssisApp() {}
+	/**
+	 * 
+	 */
+	private AssisApp() {
+	}
 
-    public static void main(String[] args) {
-        int code = run(args, System.out, System.err);
-        System.exit(code);
-    }
+	/**
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		int code = run(args, System.out, System.err);
+		System.exit(code);
+	}
 
-    /**
-     * Test-friendly runner.
-     *
-     * @return exit code (0 success, non-zero failure)
-     */
-    static int run(String[] args, PrintStream out, PrintStream err) {
-        final CliArgs cli;
-        try {
-            cli = CliArgs.parse(args);
-        } catch (IllegalArgumentException e) {
-            err.println(e.getMessage());
-            return 1;
-        }
+	/**
+	 * Test-friendly runner.
+	 *
+	 * @return exit code (0 success, non-zero failure)
+	 */
+	static int run(String[] args, PrintStream out, PrintStream err) {
+		final CliArgs cli;
+		try {
+			cli = CliArgs.parse(args);
+		} catch (IllegalArgumentException e) {
+			err.println(e.getMessage());
+			return 1;
+		}
 
-        if (cli.mode == CliArgs.Mode.HELP) {
-            out.println(CliArgs.usage());
-            return 0;
-        }
+		if (cli.mode == CliArgs.Mode.HELP) {
+			out.println(CliArgs.usage());
+			return 0;
+		}
 
-        if (cli.mode == CliArgs.Mode.VERSION) {
-            out.println("ASSIS " + GenerateClassDiagram.versionOrDev());
-            return 0;
-        }
+		if (cli.mode == CliArgs.Mode.VERSION) {
+			out.println("ASSIS " + GenerateClassDiagram.versionOrDev());
+			return 0;
+		}
 
-        final Set<Path> sourceRoots;
-        try {
-            sourceRoots = SourceLocator.resolve(cli.sourceRoots);
-        } catch (Exception e) {
-            err.println("ERROR: " + e.getMessage());
-            return 2;
-        }
+		final Set<Path> sourceRoots;
+		try {
+			sourceRoots = SourceLocator.resolve(cli.sourceRoots);
+		} catch (Exception e) {
+			err.println("ERROR: " + e.getMessage());
+			return 2;
+		}
 
-        final Path outDir = (cli.outDir != null)
-            ? cli.outDir.toAbsolutePath().normalize()
-            : Path.of(DEFAULT_OUT_DIR).toAbsolutePath().normalize();
+		final Path outDir = (cli.outDir != null) ? cli.outDir.toAbsolutePath().normalize()
+				: Path.of(DEFAULT_OUT_DIR).toAbsolutePath().normalize();
 
-        try {
-            if (Files.exists(outDir) && !Files.isDirectory(outDir)) {
-                throw new IllegalArgumentException("-d must be a directory: " + outDir);
-            }
-            Files.createDirectories(outDir);
+		try {
+			if (Files.exists(outDir) && !Files.isDirectory(outDir)) {
+				throw new IllegalArgumentException("-d must be a directory: " + outDir);
+			}
+			Files.createDirectories(outDir);
 
+			LOG.info(() -> "Generating diagrams from source roots:");
+			for (Path r : sourceRoots) {
+				LOG.info(() -> "  - " + r);
+			}
+			LOG.info(() -> "Writing outputs to: " + outDir);
 
+			GenerateClassDiagram.generate(sourceRoots, outDir);
 
-            LOG.info(() -> "Generating diagrams from source roots:");
-            for (Path r : sourceRoots) {
-                LOG.info(() -> "  - " + r);
-            }
-            LOG.info(() -> "Writing outputs to: " + outDir);
+			return 0;
+		} catch (Exception e) {
+			err.println("ERROR: " + e.getMessage());
+			return 3;
+		}
+	}
 
-    
-             GenerateClassDiagram.generate(sourceRoots, outDir);
-
- 
- 
-            return 0;
-        } catch (Exception e) {
-            err.println("ERROR: " + e.getMessage());
-            return 3;
-        }
-    }
-
-    /**
-     * Creates a backup next to the output file if it already exists.
-     * Backup name MUST NOT end with ".puml" to avoid being treated as source by tooling.
-     *
-     * Example: class-diagram.puml.bak-20260102-093012
-     */
-    static Path backupIfExists(Path outFile) throws IOException {
-        if (!Files.exists(outFile) || !Files.isRegularFile(outFile)) {
-            return null;
-        }
-
-        String ts = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        Path bak = outFile.resolveSibling(outFile.getFileName().toString() + ".bak-" + ts);
-
-        Files.copy(outFile, bak, StandardCopyOption.COPY_ATTRIBUTES);
-        return bak;
-    }
-
-    /**
-     * Inserts a small comment block with provenance information.
-     * We try to place it right after @startuml when present.
-     */
-    static void injectTraceabilityHeader(Path pumlFile, Set<Path> sourceRoots) throws IOException {
-        if (!Files.exists(pumlFile)) return;
-
-        List<String> lines = Files.readAllLines(pumlFile);
-
-        String ts = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        String version = GenerateClassDiagram.versionOrDev();
-
-        ArrayList<String> header = new ArrayList<>();
-        header.add("' Generated by ASSIS " + version);
-        header.add("' Source roots:");
-        for (Path r : sourceRoots) {
-            header.add("'   - " + r.toAbsolutePath());
-        }
-        header.add("' Generated at: " + ts);
-
-        int insertAt = 0;
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i).trim().startsWith("@startuml")) {
-                insertAt = i + 1;
-                break;
-            }
-        }
-
-        ArrayList<String> out = new ArrayList<>(lines.size() + header.size() + 1);
-        out.addAll(lines.subList(0, insertAt));
-        out.addAll(header);
-        out.addAll(lines.subList(insertAt, lines.size()));
-
-        Files.write(pumlFile, out);
-    }
-
-    @SuppressWarnings("unused")
-    private static void moveReplacing(Path from, Path to) throws IOException {
-        try {
-            Files.move(from, to,
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException atomicNotSupported) {
-            Files.move(from, to,
-                StandardCopyOption.REPLACE_EXISTING);
-        }
-    }
 }
