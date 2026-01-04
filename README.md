@@ -2,17 +2,21 @@
 [![CodeQL Advanced](https://github.com/masmangan/assis/actions/workflows/codeql.yml/badge.svg)](https://github.com/masmangan/assis/actions/workflows/codeql.yml)
 
 # ASSIS
-Generate a UML diagram from Java code, using Java Parser and PlantUML
+Generate UML diagrams from Java code
 
+## Getting Started
+
+**Do you have a terminal available?**  
+Check the [Getting Started Guide](./docs/getting-started.md).
 
 ## Usage
 
 ### Get the latest version
 
-Download the latest release at: 
+Download the latest release from: 
 https://github.com/masmangan/assis/releases
 
-### Place the jar and run ASSIS
+### Run ASSIS
 
 ASSIS is the assistant that will scan your source folder for .java files and generate a class-diagram.puml.
 
