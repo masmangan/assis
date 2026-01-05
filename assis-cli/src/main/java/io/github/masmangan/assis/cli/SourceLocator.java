@@ -53,13 +53,19 @@ final class SourceLocator {
 			Path abs = candidate.toAbsolutePath().normalize();
 			LOG.info(() -> "Trying source directory: " + abs);
 
+			boolean invalid = false;
+			
 			if (!Files.isDirectory(candidate)) {
 				LOG.info(() -> "Not a directory. Skipping: " + candidate.toString());
-				continue;
+				invalid = true;
 			}
 
 			if (!containsJava(candidate)) {
 				LOG.info(() -> "No source code inside. Skipping: " + candidate.toString());
+				invalid = true;
+			}
+			
+			if (invalid) {
 				continue;
 			}
 
