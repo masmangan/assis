@@ -204,7 +204,7 @@ class CollectTypesVisitor {
 	private void emitAnnotationMembers(AnnotationDeclaration ad) {
 		ad.getMembers().stream().filter(AnnotationMemberDeclaration.class::isInstance)
 				.map(AnnotationMemberDeclaration.class::cast)
-				.sorted(Comparator.comparing(AnnotationMemberDeclaration::getNameAsString)).forEach((amd) -> {
+				.sorted(Comparator.comparing(AnnotationMemberDeclaration::getNameAsString)).forEach(amd -> {
 					String name = amd.getNameAsString();
 					String type = amd.getType().asString();
 
