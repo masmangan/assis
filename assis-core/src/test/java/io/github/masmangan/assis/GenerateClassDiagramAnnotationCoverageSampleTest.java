@@ -6,10 +6,7 @@
 package io.github.masmangan.assis;
 
 import static io.github.masmangan.assis.TestWorkbench.assertAnyLineContainsAll;
-import static io.github.masmangan.assis.TestWorkbench.assertAppearsInOrder;
-import static io.github.masmangan.assis.TestWorkbench.assertPumlContains;
 import static io.github.masmangan.assis.TestWorkbench.generatePumlFromSample;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Path;
 
@@ -18,27 +15,21 @@ import org.junit.jupiter.api.io.TempDir;
 
 class GenerateClassDiagramAnnotationCoverageSampleTest {
 
-    @TempDir
-    Path tempDir;
+	@TempDir
+	Path tempDir;
 
-    @Test
-    void generatesEnumConstantsInDeclarationOrder() throws Exception {
-        String puml = generatePumlFromSample(
-                "samples/annotations",
-                tempDir,
-                "annotations"
-        );
+	@Test
+	void generatesEnumConstantsInDeclarationOrder() throws Exception {
+		String puml = generatePumlFromSample("samples/annotations", tempDir, "annotations");
 
-        
-        assertAnyLineContainsAll(puml, "Retention");
-        assertAnyLineContainsAll(puml, "Target");
-        
-        assertAnyLineContainsAll(puml, "MyAnnotation");
-        assertAnyLineContainsAll(puml, "value");
-        assertAnyLineContainsAll(puml, "level");
-        assertAnyLineContainsAll(puml, "1");
+		assertAnyLineContainsAll(puml, "Retention");
+		assertAnyLineContainsAll(puml, "Target");
 
+		assertAnyLineContainsAll(puml, "MyAnnotation");
+		assertAnyLineContainsAll(puml, "value");
+		assertAnyLineContainsAll(puml, "level");
+		assertAnyLineContainsAll(puml, "1");
 
-    }    
- 
+	}
+
 }
