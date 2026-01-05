@@ -1,0 +1,54 @@
+@startuml
+
+:Set of Java Source Code; <<object>>
+
+partition **process** ASSIS compilation{
+
+:Setup Scope 
+  out: AnalysisParameters as ap;
+
+:AnalysisParameters; <<object>>
+
+:Parse Sources
+  in: AnalysisParameters as ap
+  out: SyntaxTree as st;
+
+:SyntaxTree; <<object>>
+
+:Collect Types
+  in: SyntaxTree as st
+  out: DeclaredIndex as di;
+
+:DeclaredIndex; <<object>>
+
+split
+
+:Collect Inheritances
+  in: DeclaredIndex as di
+  out: Set of DiagramFragment as df;
+  
+split again
+
+:Collect Associations
+  in: DeclaredIndex as di
+  out: Set of DiagramFragment as df;
+  
+split again
+
+:Collect Dependencies
+  in: DeclaredIndex as di
+  out: Set of DiagramFragment as df;
+  
+end split
+:Set of DiagramFragment; <<object>>
+
+:Merge Fragments
+  in: Set of DiagramFragment as df;
+}
+
+
+  
+:Set of UML Diagram; <<object>>
+
+@enduml
+ 
