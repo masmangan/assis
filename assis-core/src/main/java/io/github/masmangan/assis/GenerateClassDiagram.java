@@ -137,9 +137,14 @@ public class GenerateClassDiagram {
 	 */
 	private static void scanSourceRoots(Set<Path> sourceRoots, DeclaredIndex index, List<CompilationUnit> cus)
 			throws IOException {
-		ParserConfiguration config = new ParserConfiguration();
-		config.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
-		StaticJavaParser.setConfiguration(config);
+
+		// Stripping no structural data: comments and tokens
+		ParserConfiguration cfg = new ParserConfiguration()
+		    .setAttributeComments(false)  
+		    .setStoreTokens(false)       
+			.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17);
+		
+		StaticJavaParser.setConfiguration(cfg);
 
 		logger.log(Level.INFO, () -> "Scanning started");
 
@@ -158,7 +163,17 @@ public class GenerateClassDiagram {
 			List<ParseResult<CompilationUnit>> results = root.tryToParse("");
 
 			for (ParseResult<CompilationUnit> r : results) {
-				r.getResult().ifPresent(cus::add);
+				
+				r.getResult().ifPresent(cu -> { 
+					// Stripping no structural data: method body
+					cu.findAll(com.github.javaparser.ast.body.MethodDeclaration.class)
+					  .forEach(m -> m.removeBody());
+					// Stripping no structural data: constructor body
+					cu.findAll(com.github.javaparser.ast.body.ConstructorDeclaration.class)
+					.forEach(c -> c.getBody().getStatements().clear());
+					
+					cus.add(cu);
+				});
 			}
 
 		}
@@ -300,8 +315,10 @@ public class GenerateClassDiagram {
 	 * @throws NullPointerException if {@code n} is {@code null}
 	 */
 	static List<String> stereotypesOf(NodeWithAnnotations<?> n) {
-		return n.getAnnotations().stream().map(a -> a.getName().getIdentifier()) // simple name only
-				.toList();
+	    return n.getAnnotations().stream()
+	        .map(a -> a.getName().getIdentifier())
+	        .sorted()
+	        .toList();
 	}
 
 	/**
