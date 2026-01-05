@@ -58,8 +58,10 @@ final class SourceLocator {
             	LOG.info(() -> "Not a directory. Skipping: " + candidate.toString());
             	continue;
             }
-            if (!containsJava(candidate)) continue; {
-            	LOG.info(() -> "No source code inside. Skipping: " + candidate.toString());           	
+            
+            if (!containsJava(candidate)) {
+            	LOG.info(() -> "No source code inside. Skipping: " + candidate.toString());  
+            	continue;
             }
 
             LOG.info(() -> "Using source directory: " + abs);
