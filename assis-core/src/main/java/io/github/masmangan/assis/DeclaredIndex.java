@@ -109,8 +109,8 @@ class DeclaredIndex {
 		}
 		if (idx.byFqn.containsKey(fqn)) {
 			logger.log(Level.WARNING, () -> "Attempt to redefine " + fqn);
-			logger.log(Level.WARNING, () -> cu.toString());
-			logger.log(Level.WARNING, () -> td.toString());
+			logger.log(Level.WARNING, cu::toString);
+			logger.log(Level.WARNING, td::toString);
 			logger.log(Level.WARNING, () -> "Keeping first definition.");
 			return;
 		}
