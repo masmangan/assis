@@ -30,6 +30,9 @@ class DeclaredIndex {
 	 */
 	static final Logger logger = Logger.getLogger(DeclaredIndex.class.getName());
 
+	/**
+	 * 
+	 */
 	private static final String PACKAGE_SEPARATOR = ".";
 
 	/** FQN → declaration */
@@ -90,6 +93,36 @@ class DeclaredIndex {
 
 	/**
 	 *
+	 * @param ownerPkg
+	 * @param rawName
+	 * @return
+	 */
+	String resolveTypeName(String ownerPkg, String rawName) {
+		if (rawName == null) {
+			return null;
+		}
+		String raw = rawName.trim();
+		if (raw.isEmpty()) {
+			return null;
+		}
+
+		if (raw.contains(PACKAGE_SEPARATOR) && byFqn.containsKey(raw)) {
+			return raw;
+		}
+
+		String simple = GenerateClassDiagram.simpleName(raw);
+
+		String samePkg = (ownerPkg == null || ownerPkg.isEmpty()) ? simple : ownerPkg + PACKAGE_SEPARATOR + simple;
+
+		if (byFqn.containsKey(samePkg)) {
+			return samePkg;
+		}
+
+		return uniqueBySimple.get(simple);
+	}
+
+	/**
+	 *
 	 * @param idx
 	 * @param cu
 	 * @param td
@@ -145,40 +178,10 @@ class DeclaredIndex {
 
 	/**
 	 *
-	 * @param ownerPkg
-	 * @param rawName
-	 * @return
-	 */
-	String resolveTypeName(String ownerPkg, String rawName) {
-		if (rawName == null) {
-			return null;
-		}
-		String raw = rawName.trim();
-		if (raw.isEmpty()) {
-			return null;
-		}
-
-		if (raw.contains(PACKAGE_SEPARATOR) && byFqn.containsKey(raw)) {
-			return raw;
-		}
-
-		String simple = GenerateClassDiagram.simpleName(raw);
-
-		String samePkg = (ownerPkg == null || ownerPkg.isEmpty()) ? simple : ownerPkg + PACKAGE_SEPARATOR + simple;
-
-		if (byFqn.containsKey(samePkg)) {
-			return samePkg;
-		}
-
-		return uniqueBySimple.get(simple);
-	}
-
-	/**
-	 *
 	 * @param fqn
 	 * @return
 	 */
-	String pumlName(String fqn) {
+	static String pumlName(String fqn) {
 		return fqn;
 	}
 
@@ -187,7 +190,7 @@ class DeclaredIndex {
 	 * @param fqn
 	 * @return
 	 */
-	String qPuml(String fqn) {
+	static String qPuml(String fqn) {
 		return "\"" + pumlName(fqn) + "\"";
 	}
 }
