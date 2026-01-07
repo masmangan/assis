@@ -11,6 +11,7 @@
 
 	<artifactId>assis-core</artifactId>
 	<packaging>jar</packaging>
+	
 	<name>ASSIS Core</name>
 
 
