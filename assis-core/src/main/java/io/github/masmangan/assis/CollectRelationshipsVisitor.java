@@ -42,19 +42,15 @@ import com.github.javaparser.ast.type.Type;
  */
 class CollectRelationshipsVisitor {
 
+	/**
+	 * 
+	 */
 	private static final char CHAR_INNER_TYPE_SEPARATOR = '$';
 
+	/**
+	 * 
+	 */
 	private static final char CHAR_PACKAGE_SEPARATOR = '.';
-
-	/**
-	 *
-	 */
-	private static final String HAS_A_INNER = "+--";
-
-	/**
-	 *
-	 */
-	private static final String HAS_A = " --> ";
 
 	/**
 	 *
@@ -123,7 +119,7 @@ class CollectRelationshipsVisitor {
 	private void emitInnerTypes(String fqn) {
 		String ownerFqn = ownerFqnOf(fqn);
 		if (ownerFqn != null && idx.byFqn.containsKey(ownerFqn)) {
-			pw.println("%s %s %s".formatted(idx.qPuml(ownerFqn), HAS_A_INNER, idx.qPuml(fqn)));
+			pw.connectInnerType(ownerFqn, fqn);
 		}
 	}
 
@@ -169,7 +165,7 @@ class CollectRelationshipsVisitor {
 		String raw = GenerateClassDiagram.simpleName(impl.getNameWithScope());
 		String target = idx.resolveTypeName(pkg, raw);
 		if (target != null) {
-			pw.println(idx.qPuml(subFqn) + IS_A_IMPLEMENTS + idx.qPuml(target));
+			pw.println(DeclaredIndex.qPuml(subFqn) + IS_A_IMPLEMENTS + DeclaredIndex.qPuml(target));
 		}
 	}
 
@@ -183,7 +179,7 @@ class CollectRelationshipsVisitor {
 		String raw = GenerateClassDiagram.simpleName(ext.getNameWithScope());
 		String target = idx.resolveTypeName(pkg, raw);
 		if (target != null) {
-			pw.println(idx.qPuml(subFqn) + IS_A_EXTENDS + idx.qPuml(target));
+			pw.println(DeclaredIndex.qPuml(subFqn) + IS_A_EXTENDS + DeclaredIndex.qPuml(target));
 		}
 	}
 
@@ -197,8 +193,7 @@ class CollectRelationshipsVisitor {
 	 * @param stereotypes already rendered stereotype block (may be {@code null})
 	 */
 	private void emitAssociation(String ownerFqn, String targetFqn, String role, String stereotypes) {
-		pw.println(idx.qPuml(ownerFqn) + HAS_A + idx.qPuml(targetFqn) + " : " + role
-				+ (stereotypes != null ? stereotypes : ""));
+		pw.connectAssociation(ownerFqn, targetFqn, role, stereotypes);
 	}
 
 	/**
@@ -233,7 +228,7 @@ class CollectRelationshipsVisitor {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param pkg
 	 * @param ownerFqn
 	 * @param fd
