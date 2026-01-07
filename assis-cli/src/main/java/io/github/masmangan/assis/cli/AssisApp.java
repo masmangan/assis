@@ -5,8 +5,10 @@
 
 package io.github.masmangan.assis.cli;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,8 +61,8 @@ public final class AssisApp {
 		}
 
 		if (cli.mode == CliArgs.Mode.VERSION) {
-			LOG.log(Level.INFO, () -> "ASSIS " + GenerateClassDiagram.versionOrDev());
-			return 0;
+		    logVersion();
+		    return 0;
 		}
 
 		final Set<Path> sourceRoots;
@@ -94,5 +96,43 @@ public final class AssisApp {
 			return 3;
 		}
 	}
+	
+	private static void logVersion() {
+	    LOG.log(Level.INFO, () -> "ASSIS " + io.github.masmangan.assis.GenerateClassDiagram.versionOrDev());
+
+	    // JavaParser version
+	    LOG.log(Level.INFO, () -> "JavaParser: " + mavenPomVersion("com.github.javaparser", "javaparser-core"));
+
+	    // Java runtime
+	    final String javaVersion = System.getProperty("java.version");
+	    final String javaVendor  = System.getProperty("java.vendor");
+	    final String runtimeName = System.getProperty("java.runtime.name");
+	    final String runtimeVer  = System.getProperty("java.runtime.version");
+
+	    final String runtime = (runtimeName != null ? runtimeName : "Java Runtime")
+	            + (runtimeVer != null ? " " + runtimeVer : "");
+
+	    LOG.log(Level.INFO, () -> "Java: " + javaVersion + " (" + javaVendor + ") / " + runtime);
+
+	    // OS
+	    final String os = System.getProperty("os.name") + " "
+	            + System.getProperty("os.version") + " "
+	            + System.getProperty("os.arch");
+
+	    LOG.log(Level.INFO, () -> "OS: " + os);
+	}
+
+	private static String mavenPomVersion(String groupId, String artifactId) {
+	    String path = "META-INF/maven/" + groupId + "/" + artifactId + "/pom.properties";
+	    try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(path)) {
+	        if (in == null) return "unknown";
+	        Properties p = new Properties();
+	        p.load(in);
+	        return p.getProperty("version", "unknown");
+	    } catch (Exception e) {
+	        return "unknown";
+	    }
+	}
+
 
 }
