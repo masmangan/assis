@@ -89,7 +89,9 @@ public class GenerateClassDiagram {
 	 * @throws IOException          if an I/O error occurs while reading sources or
 	 *                              writing the output file
 	 */
-	public static void generate(Set<Path> sourceRoots, Path outDir) throws IOException {
+	public static void generate(final Set<Path> sourceRoots, final Path outDir) throws IOException {
+		Objects.requireNonNull(sourceRoots, "sourceRoots");
+		Objects.requireNonNull(outDir, "outDir");
 
 		DeclaredIndex index = new DeclaredIndex();
 		List<CompilationUnit> cus = new ArrayList<>();
@@ -102,9 +104,6 @@ public class GenerateClassDiagram {
 		logger.log(Level.FINE, () -> "**uniqueBySimple** " + index.uniqueBySimple.toString());
 
 		logger.log(Level.FINE, () -> "**      CUS     **" + cus.toString());
-
-		Objects.requireNonNull(sourceRoots, "sourceRoots");
-		Objects.requireNonNull(outDir, "outDir");
 
 		Path dir = outDir.normalize();
 
@@ -135,18 +134,20 @@ public class GenerateClassDiagram {
 	 * @param cus         list of compilation units scanned
 	 * @throws IOException if an I/O error occurs while reading sources
 	 */
-	private static void scanSourceRoots(Set<Path> sourceRoots, DeclaredIndex index, List<CompilationUnit> cus)
-			throws IOException {
+	private static void scanSourceRoots(final Set<Path> sourceRoots, final DeclaredIndex index,
+			final List<CompilationUnit> cus) throws IOException {
 
-		ParserConfiguration cfg = new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17)
-				// MEMORY: Stripping no structural data to save memory space: comments and
-				// tokens
+		final ParserConfiguration cfg = new ParserConfiguration()
+				.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17)
+				// MEMORY: Stripping non structural data to save memory space.
+				// Comments and tokens disabled by the following sets.
 				.setAttributeComments(false).setStoreTokens(false);
 
 		StaticJavaParser.setConfiguration(cfg);
 
 		logger.log(Level.INFO, () -> "Scanning started");
 
+		// Sorting files by path
 		List<Path> roots = sourceRoots.stream().sorted(Path::compareTo).toList();
 
 		for (Path src : roots) {
@@ -154,7 +155,7 @@ public class GenerateClassDiagram {
 			logger.log(Level.INFO, () -> "Scanning " + src);
 
 			if (!Files.exists(src)) {
-				logger.log(Level.WARNING, () -> "Source folder does not exist: " + src);
+				logger.log(Level.WARNING, () -> "@assis:bogus-src: Source folder does not exist: " + src);
 				continue;
 			}
 
@@ -195,12 +196,25 @@ public class GenerateClassDiagram {
 	 * @param pw writer to receive directives; must not be {@code null}
 	 * @throws NullPointerException if {@code pw} is {@code null}
 	 */
-	private static void addHeader(PlantUMLWriter pw) {
+	private static void addHeader(final PlantUMLWriter pw) {
 		pw.println();
 		pw.println("hide empty members");
 		pw.println();
 		pw.println("!theme blueprint");
 		pw.println("!pragma useIntermediatePackages false");
+		pw.println();
+	}
+
+	/**
+	 * Writes ASSIS version and repository address.
+	 *
+	 * @param pw writer to receive directives; must not be {@code null}
+	 * @throws NullPointerException if {@code pw} is {@code null}
+	 */
+	private static void addFooter(final PlantUMLWriter pw) {
+		pw.println();
+		pw.println("' Diagram generated with ASSIS compiler (%s).".formatted(versionOrDev()));
+		pw.println("' https://github.com/masmangan/assis");
 		pw.println();
 	}
 
@@ -225,7 +239,7 @@ public class GenerateClassDiagram {
 	 *            {@code null}
 	 * @throws NullPointerException if {@code out} or {@code idx} is {@code null}
 	 */
-	private static void writeDiagram(Path out, DeclaredIndex idx) {
+	private static void writeDiagram(final Path out, final DeclaredIndex idx) {
 		try (PlantUMLWriter pw = new PlantUMLWriter(
 				new PrintWriter(Files.newBufferedWriter(out, StandardCharsets.UTF_8)));) {
 			pw.beginDiagram("class-diagram");
@@ -256,6 +270,8 @@ public class GenerateClassDiagram {
 
 			pw.println();
 			pw.println("left to right direction");
+
+			addFooter(pw);
 
 			pw.endDiagram("class-diagram");
 
@@ -300,6 +316,8 @@ public class GenerateClassDiagram {
 		default -> "~";
 		};
 	}
+
+	// Shared helpers for visitors and DeclaredIndex.
 
 	/**
 	 * Returns the stereotypes (annotation simple names) declared on a node.
