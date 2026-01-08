@@ -2,39 +2,48 @@
 [![CodeQL Advanced](https://github.com/masmangan/assis/actions/workflows/codeql.yml/badge.svg)](https://github.com/masmangan/assis/actions/workflows/codeql.yml)
 
 # ASSIS
-Generate UML diagrams from Java code
+Generate UML diagrams from Java code.
 
 ## Getting Started
 
 **Do you have a terminal available?**  
 Check the [Getting Started Guide](./docs/getting-started.md).
 
+> The instructions below were validated with **ASSIS v0.9.3**.
+
 ## Usage
 
 ### Get the latest version
 
-Download the latest release from: 
+Download the latest release from:  
 https://github.com/masmangan/assis/releases
+
+For **v0.9.3**, the released CLI artifact is:
+
+https://github.com/masmangan/assis/releases/download/v0.9.3/assis-cli-0.9.3-beta.jar
+
+Older releases are kept for reference, but documentation always targets the latest release.
 
 ### Run ASSIS
 
-ASSIS is the assistant that will scan your source folder for .java files and generate a class-diagram.puml.
+ASSIS scans your source folder for `.java` files and generates a PlantUML class diagram
+(`class-diagram.puml`).
 
-For instance, for version v0.7.0:
+Place the JAR in the project root folder (or any folder of your choice).
 
-Get the file at https://github.com/masmangan/assis/releases/download/v0.7.0/assis-0.7.0.jar
-
-Place the jar at the project root folder.
-
-Run ASSIS at command line:
+Run ASSIS from the command line:
 
 ```bash
-java -jar assis-0.7.0.jar
+java -jar assis-cli-0.9.3-beta.jar
 ```
 
-Get the class-diagram.puml.
+After execution, a `class-diagram.puml` file will be generated.
 
-The diagram can be edit and rendered at Plantuml Online Server (https://www.plantuml.com/plantuml/uml/) or the .puml can be embeded on a Markdown file. See the diagram bellow for an example.
+The diagram can be edited and rendered using:
+- PlantUML Online Server: https://www.plantuml.com/plantuml/uml/
+- IDE plugins (e.g., Eclipse, VS Code)
+
+The `.puml` file can also be embedded in Markdown documents.
 
 ## Development
 
@@ -44,21 +53,21 @@ The diagram can be edit and rendered at Plantuml Online Server (https://www.plan
 mvn -DskipTests package
 ```
 
-### Run with Jar
+### Run with JAR (from source build)
 
 ```bash
-java -jar target/assis-0.7.0.jar
+java -jar assis-cli/target/assis-cli-0.9.3.jar
 ```
 
 ### Run with Maven
-```
-mvn -q -DskipTests exec:java -Dexec.mainClass=io.github.masmangan.assis.AssisApp
+
+```bash
+mvn -q -DskipTests exec:java -Dexec.mainClass=io.github.masmangan.assis.cli.AssisApp
 ```
 
 ## ASSIS Classes Overview
 
 ![Assis](http://www.plantuml.com/plantuml/proxy?cache=no&fmt=svg&src=https://raw.githubusercontent.com/masmangan/assis/refs/heads/main/assis-core/docs/diagrams/src/class-diagram.puml)
-
 
 ## License
 
@@ -72,12 +81,11 @@ and documentation), rather than as inline code generation or autonomous programm
 
 All final decisions and implementations remain the responsibility of the author.
 
-
 ## References
 
-Assis uses existing open-source tools as building blocks:
+ASSIS uses existing open-source tools as building blocks:
 
-- **PlantUML** — UML tool 
+- **PlantUML** — UML tool  
   https://plantuml.com
 
 - **JavaParser** — Java source code parser  
