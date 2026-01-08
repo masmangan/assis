@@ -7,7 +7,7 @@ Generate UML diagrams from Java code.
 ## Getting Started
 
 **Do you have a terminal available?**  
-Check the [Getting Started Guide](./docs/getting-started.md).
+Check the [Getting Started Guide](./docs/user/assis-gs-bash.md).
 
 > The instructions below were validated with **ASSIS v0.9.3**.
 
