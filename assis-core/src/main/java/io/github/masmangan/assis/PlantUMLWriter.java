@@ -487,7 +487,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	private void endType(final String keyword, final String name) {
 		checkName(name);
 		dedent();
-		println("/' @assis:end %s \"%s\"'/".formatted(keyword, name.strip()));
+		println("} /' @assis:end %s \"%s\"'/".formatted(keyword, name.strip()));
 	}
 
 	
