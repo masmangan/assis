@@ -4,7 +4,7 @@ This guide shows how to run **ASSIS CLI** from the command line and generate you
 
 No IDE is required.
 
-> Verified with ASSIS v0.9.3 (beta)
+> The instructions below were validated with **ASSIS v0.9.3-beta**.
 
 ---
 
@@ -174,9 +174,7 @@ If something did not work as expected, please report it:
 👉 https://github.com/masmangan/assis/issues
 
 When reporting an issue, include:
-- your operating system
-- Java version (`java -version`)
-- ASSIS version (`--version`)
+- ASSIS version information (`--version`)
 - the command you ran
 - any error message or screenshot
 
