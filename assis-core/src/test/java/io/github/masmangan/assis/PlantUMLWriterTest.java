@@ -25,12 +25,12 @@ class PlantUMLWriterTest {
 		StringWriter sw = new StringWriter();
 
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
-			w.beginDiagram("name");
-			w.endDiagram("name");
+			w.beginDiagram("D");
+			w.endDiagram("D");
 		}
 
 		String expected = """
-				@startuml "name"
+				@startuml "D"
 				@enduml
 				""";
 
@@ -42,14 +42,14 @@ class PlantUMLWriterTest {
 		StringWriter sw = new StringWriter();
 
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
-			w.beginDiagram("name");
+			w.beginDiagram("D");
 			w.beginPackage("P");
 			w.endPackage("P");
-			w.endDiagram("name");
+			w.endDiagram("D");
 		}
 
 		String expected = """
-				@startuml "name"
+				@startuml "D"
 				package "P" { /' @assis:begin package "P" '/
 				} /' @assis:end package "P" '/
 				@enduml
@@ -57,20 +57,20 @@ class PlantUMLWriterTest {
 
 		assertEquals(expected, sw.toString());
 	}
-	
+
 	@Test
 	void emptyClassInsideDiagramIsProperlyClosed() throws Exception {
 		StringWriter sw = new StringWriter();
 
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
-			w.beginDiagram("name");
+			w.beginDiagram("D");
 			w.beginClass("A", "");
 			w.endClass("A");
-			w.endDiagram("name");
+			w.endDiagram("D");
 		}
 
 		String expected = """
-				@startuml "name"
+				@startuml "D"
 				class "A" { /' @assis:begin class "A" '/
 				} /' @assis:end class "A" '/
 				@enduml
@@ -80,20 +80,20 @@ class PlantUMLWriterTest {
 	}
 
 	@Test
-	void emptyClassInsidePackageGetsNoIndentation() throws Exception {
+	void emptyClassInsidePackageGetsIndentation() throws Exception {
 		StringWriter sw = new StringWriter();
 
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
-			w.beginDiagram("name");
+			w.beginDiagram("D");
 			w.beginPackage("P");
 			w.beginClass("A", "");
 			w.endClass("A");
 			w.endPackage("P");
-			w.endDiagram("name");
+			w.endDiagram("D");
 		}
 
 		String expected = """
-				@startuml "name"
+				@startuml "D"
 				package "P" { /' @assis:begin package "P" '/
 				  class "A" { /' @assis:begin class "A" '/
 				  } /' @assis:end class "A" '/
@@ -102,6 +102,36 @@ class PlantUMLWriterTest {
 				""";
 
 		assertEquals(expected, sw.toString());
+	}
+
+	@Test
+	void associationWithRole() throws Exception {
+	    StringWriter sw = new StringWriter();
+
+	    try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
+	        w.connectAssociation("A", "B", "r", "");
+	    }
+
+	    String expected = """
+	        "A" --> "r" "B"
+	        """;
+
+	    assertEquals(expected, sw.toString());
+	}
+	
+	@Test
+	void associationWithRoleAndStereotype() throws Exception {
+	    StringWriter sw = new StringWriter();
+
+	    try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
+	        w.connectAssociation("A", "B", "r", "<<OneToMany>>");
+	    }
+
+	    String expected = """
+	        "A" --> "r" "B" : <<OneToMany>>
+	        """;
+
+	    assertEquals(expected, sw.toString());
 	}
 	
 }
