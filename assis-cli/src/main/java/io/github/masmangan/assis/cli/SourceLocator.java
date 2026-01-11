@@ -55,12 +55,12 @@ final class SourceLocator {
 
 			boolean invalid = false;
 			
-			if (!Files.isDirectory(candidate)) {
+			if (!Files.isDirectory(abs)) {
 				LOG.info(() -> "Not a directory. Skipping: " + candidate.toString());
 				invalid = true;
 			}
 
-			if (!containsJava(candidate)) {
+			if (!containsJava(abs)) {
 				LOG.info(() -> "No source code inside. Skipping: " + candidate.toString());
 				invalid = true;
 			}
