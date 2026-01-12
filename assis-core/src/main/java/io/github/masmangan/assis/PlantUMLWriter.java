@@ -26,8 +26,8 @@ import java.util.Objects;
  * This class performs no validation of PlantUML syntax and does not attempt to
  * enforce balanced blocks.
  * <p>
- * For format integrity, names must be fully qualified, single-lined and must not
- * contain double quotes ("). Violations cause IllegalArgumentException.
+ * For format integrity, names must be fully qualified, single-lined and must
+ * not contain double quotes ("). Violations cause IllegalArgumentException.
  * <p>
  * End a type block before beginning another type block.
  * <p>
@@ -60,10 +60,10 @@ import java.util.Objects;
  * can be emitted as two separate type blocks:
  *
  * <pre>{@code
- * pw.beginClass("p.A", null); // Names are provided unquoted; helpers quote as needed.
+ * pw.beginClass("p.A", ""); // Names are provided unquoted; helpers quote as needed.
  * pw.endClass("p.A");
  *
- * pw.beginClass("p.A$B", null); // A different separator than ".".
+ * pw.beginClass("p.A$B", ""); // A different separator than ".".
  * pw.endClass("p.A$B");
  *
  * pw.println("\"p.A\" +-- \"p.A$B\""); // Raw PlantUML: caller provides correct quoting.
@@ -77,6 +77,8 @@ import java.util.Objects;
  */
 public final class PlantUMLWriter implements AutoCloseable {
 
+	private static final String COLON_SEPARATOR = ":";
+
 	private static final String SPACE_STRING = " ";
 
 	private static final String EMPTY_STRING = "";
@@ -87,12 +89,12 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 *
 	 */
 	private static final String HAS_A_INNER = "+--";
-	
+
 	/**
 	 *
 	 */
-	private static final String HAS_A = "-->";
-	
+	private static final String HAS_A = "--->"; // longer line because of role and stereotype label
+
 	private final PrintWriter out;
 
 	private int indentLevel;
@@ -114,19 +116,19 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 *             {@code null}
 	 * @throws NullPointerException if {@code line} is {@code null}
 	 */
-    public void println(final String line) {
-        if (activeTag != null) {
-            printlnInternal(activeTag + " " + line);
-        } else {
-            printlnInternal(line);
-        }
-    }
-    
-    private void printlnInternal(final String line) {
+	public void println(final String line) {
+		if (activeTag != null) {
+			printlnInternal(activeTag + " " + line);
+		} else {
+			printlnInternal(line);
+		}
+	}
+
+	private void printlnInternal(final String line) {
 		Objects.requireNonNull(line, "line");
 		out.println(INDENT_UNIT.repeat(indentLevel) + line);
 	}
-	
+
 	/**
 	 * Writes an empty line.
 	 */
@@ -431,7 +433,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 
 	/**
 	 * Connects owned as a inner type of owner.
-	 * 
+	 *
 	 * @param owner owner to quote in the emitted statement; must not be
 	 *              {@code null}
 	 * @param owned owned to quote in the emitted statement; must not be
@@ -446,41 +448,68 @@ public final class PlantUMLWriter implements AutoCloseable {
 		println("\"%s\" %s \"%s\"".formatted(owner, HAS_A_INNER, owned));
 	}
 
-	
 	public void connectAssociation(String source, String target, String role, String stereotypes) {
 		checkName(source);
 		checkName(target);
+		checkName(role);
 		checkStereotypes(stereotypes);
-		println("\"%s\" %s \"%s\" : %s %s".formatted(source, HAS_A, target, role, stereotypes));	
+
+		out.print(quote(source));
+
+		out.print(SPACE_STRING);
+		out.print(HAS_A);
+
+		if (role != null && !role.isBlank()) {
+			out.print(SPACE_STRING);
+			out.print(quote(role));
+		}
+
+		out.print(SPACE_STRING);
+		out.print(quote(target));
+
+		if (stereotypes != null && !stereotypes.isBlank()) {
+			out.print(SPACE_STRING);
+			out.print(COLON_SEPARATOR);
+			out.print(SPACE_STRING);
+			out.print(stereotypes);
+		}
+
+		out.println();
 	}
-	// tag 
-    private String activeTag;
 
-    public void withBeforeTag(String tag, Runnable action) {
-        checkTag(tag);
-        if (activeTag != null) {
-            throw new IllegalStateException("Nested withTag() is not allowed");
-        }
-        activeTag = tag;
-        try {
-            action.run();
-        } finally {
-            activeTag = null;
-        }
-    }
+	private String quote(String s) {
+		return "\"" + s.strip() + "\"";
+	}
 
-    private void checkTag(String tag) {
-        if (tag == null || tag.isBlank()) {
-            throw new IllegalArgumentException("Tag must be non-empty");
-        }
-    }	
-    
+	// tag
+	private String activeTag;
+
+	public void withBeforeTag(String tag, Runnable action) {
+		checkTag(tag);
+		if (activeTag != null) {
+			throw new IllegalStateException("Nested withTag() is not allowed");
+		}
+		activeTag = tag;
+		try {
+			action.run();
+		} finally {
+			activeTag = null;
+		}
+	}
+
+	private void checkTag(String tag) {
+		if (tag == null || tag.isBlank()) {
+			throw new IllegalArgumentException("Tag must be non-empty");
+		}
+	}
+
 	// block helpers
 
 	private void beginType(final String keyword, final String name, final String stereotypes) {
 		checkName(name);
 		checkStereotypes(stereotypes);
-		println("%s \"%s\"%s { /' @assis:begin %s \"%s\" '/".formatted(keyword, name.strip(), stereotypesSuffix(stereotypes.strip()), keyword, name.strip()));
+		println("%s \"%s\"%s { /' @assis:begin %s \"%s\" '/".formatted(keyword, name.strip(),
+				prefixIfPresent(" ", stereotypes.strip()), keyword, name.strip()));
 		indent();
 	}
 
@@ -490,9 +519,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 		println("} /' @assis:end %s \"%s\" '/".formatted(keyword, name.strip()));
 	}
 
-	
 	// static helpers
-	
+
 	private static void checkStereotypes(final String stereotypes) {
 		requireSingleLine(stereotypes, "stereotypes");
 		requireNotContainsQuote(stereotypes, "stereotypes");
@@ -516,20 +544,11 @@ public final class PlantUMLWriter implements AutoCloseable {
 		}
 	}
 
-	/**
-	 * Returns an empty string if stereotypes is blank; or adds space before
-	 * stereotypes.
-	 * <p>
-	 * This avoids an empty space as a separator for an empty string.
-	 * 
-	 * @param stereotypes
-	 * @return an empty string or a string with a space before stereotypes
-	 */
-	private static String stereotypesSuffix(final String stereotypes) {
-		if (stereotypes == null) {
-			return EMPTY_STRING;
+	private static String prefixIfPresent(String prefix, String s) {
+		if (s == null || s.isBlank()) {
+			return "";
 		}
-		return stereotypes.isBlank() ? EMPTY_STRING : SPACE_STRING + stereotypes;
+		return prefix + s;
 	}
 
 }

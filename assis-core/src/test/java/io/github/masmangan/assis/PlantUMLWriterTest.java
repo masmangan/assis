@@ -113,7 +113,7 @@ class PlantUMLWriterTest {
 	    }
 
 	    String expected = """
-	        "A" --> "r" "B"
+	        "A" ---> "r" "B"
 	        """;
 
 	    assertEquals(expected, sw.toString());
@@ -128,7 +128,7 @@ class PlantUMLWriterTest {
 	    }
 
 	    String expected = """
-	        "A" --> "r" "B" : <<OneToMany>>
+	        "A" ---> "r" "B" : <<OneToMany>>
 	        """;
 
 	    assertEquals(expected, sw.toString());
