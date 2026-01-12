@@ -181,7 +181,10 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 */
 	public void beginDiagram(final String name) {
 		checkName(name);
-		println("@startuml \"%s\"".formatted(name.strip()));
+		out.print("@startuml");
+		out.print(SPACE_STRING);
+		out.print(quote(name));
+		out.println();
 	}
 
 	/**
@@ -203,7 +206,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 */
 	public void endDiagram(final String name) {
 		checkName(name);
-		println("@enduml");
+		out.print("@enduml");
+		out.println();
 	}
 
 	/**
