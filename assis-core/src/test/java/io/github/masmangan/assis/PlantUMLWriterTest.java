@@ -149,4 +149,22 @@ class PlantUMLWriterTest {
 		assertEquals(expected, sw.toString());
 	}
 
+	@Test
+	void associationWithRoleAndTag() {
+	    StringWriter sw = new StringWriter();
+
+	    try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
+	        w.withBeforeTag("T",
+	            () -> w.connectAssociation("A", "B", "r", "")
+	        );
+	    } catch (Exception e) {
+	        fail(e);
+	    }
+
+	    String expected = """
+	            /' T "A" ---> "r" "B" '/
+	            """;
+
+	    assertEquals(expected, sw.toString());
+	}
 }

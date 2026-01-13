@@ -493,6 +493,12 @@ public final class PlantUMLWriter implements AutoCloseable {
 		checkName(subType);
 		checkName(superType);
 
+		if (activeTag != null) {
+			out.print("/'");
+			out.print(SPACE_STRING);
+			out.print(activeTag); 	
+			out.print(SPACE_STRING);
+		}
 		out.print(quote(subType));
 
 		out.print(SPACE_STRING);
@@ -501,6 +507,11 @@ public final class PlantUMLWriter implements AutoCloseable {
 		out.print(SPACE_STRING);
 		out.print(quote(superType));
 
+		if (activeTag != null) {
+			out.print(SPACE_STRING);
+			out.print("'/");
+		}
+		
 		out.println();
 	}
 
@@ -512,7 +523,12 @@ public final class PlantUMLWriter implements AutoCloseable {
 	public void connectExtends(String subType, String superType) {
 		checkName(subType);
 		checkName(superType);
-
+		if (activeTag != null) {
+			out.print("/'");
+			out.print(SPACE_STRING);
+			out.print(activeTag); 	
+			out.print(SPACE_STRING);
+		}
 		out.print(quote(subType));
 
 		out.print(SPACE_STRING);
@@ -521,6 +537,11 @@ public final class PlantUMLWriter implements AutoCloseable {
 		out.print(SPACE_STRING);
 		out.print(quote(superType));
 
+		if (activeTag != null) {
+			out.print(SPACE_STRING);
+			out.print("'/");
+		}
+		
 		out.println();
 	}
 
@@ -537,6 +558,13 @@ public final class PlantUMLWriter implements AutoCloseable {
 		checkName(role);
 		checkStereotypes(stereotypes);
 
+		if (activeTag != null) {
+			out.print("/'");
+			out.print(SPACE_STRING);
+			out.print(activeTag); 	
+			out.print(SPACE_STRING);
+		}
+		
 		out.print(quote(sourceType));
 
 		out.print(SPACE_STRING);
@@ -554,7 +582,12 @@ public final class PlantUMLWriter implements AutoCloseable {
 			out.print(SPACE_STRING);
 			out.print(COLON_SEPARATOR);
 			out.print(SPACE_STRING);
-			out.print(stereotypes);
+			out.print(stereotypes.strip());
+		}
+
+		if (activeTag != null) {
+			out.print(SPACE_STRING);
+			out.print("'/");
 		}
 
 		out.println();
