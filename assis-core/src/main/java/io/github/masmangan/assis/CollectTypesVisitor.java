@@ -124,33 +124,34 @@ class CollectTypesVisitor {
 	void emitType(String fqn, TypeDeclaration<?> td) {
 		String stereotypes = typeStereotypes(td);
 		String pumlName = DeclaredIndex.pumlName(fqn);
+		String vis = GenerateClassDiagram.visibility(td);
 
 		pw.println();
 
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
 			if (cid.isInterface()) {
-				pw.beginInterface(pumlName, stereotypes);
+				pw.beginInterface(pumlName, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
 				pw.endInterface(pumlName);
 			} else if (cid.isAbstract()) {
-				pw.beginAbstractClass(pumlName, stereotypes);
+				pw.beginAbstractClass(pumlName, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
 				pw.endAbstractClass(pumlName);
 			} else if (cid.isFinal()) {
-				pw.beginClass(pumlName, finalClassStereotypes(td));
+				pw.beginClass(pumlName, vis, finalClassStereotypes(td));
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
 				pw.endClass(pumlName);
 			} else {
-				pw.beginClass(pumlName, stereotypes);
+				pw.beginClass(pumlName, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
@@ -162,7 +163,7 @@ class CollectTypesVisitor {
 		}
 
 		if (td instanceof RecordDeclaration rd) {
-			pw.beginRecord(pumlName, stereotypes);
+			pw.beginRecord(pumlName, vis, stereotypes);
 
 			emitRecordComponents(fqn, rd);
 
@@ -183,7 +184,7 @@ class CollectTypesVisitor {
 		}
 
 		if (td instanceof EnumDeclaration ed) {
-			pw.beginEnum(pumlName, stereotypes);
+			pw.beginEnum(pumlName, vis, stereotypes);
 			emitEnumConstants(ed);
 			emitFields(fqn, ed.getFields());
 			emitConstructors(ed.getConstructors());
@@ -193,7 +194,7 @@ class CollectTypesVisitor {
 		}
 
 		if (td instanceof AnnotationDeclaration ad) {
-			pw.beginAnnotation(pumlName, stereotypes);
+			pw.beginAnnotation(pumlName, vis, stereotypes);
 			emitAnnotationMembers(ad);
 			pw.endAnnotation(pumlName);
 			return;

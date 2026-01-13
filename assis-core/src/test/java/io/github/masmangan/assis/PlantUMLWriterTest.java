@@ -71,7 +71,7 @@ class PlantUMLWriterTest {
 
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
 			w.beginDiagram("D");
-			w.beginClass("A", "");
+			w.beginClass("A", "", "");
 			w.endClass("A");
 			w.endDiagram("D");
 		} catch (Exception e) {
@@ -95,7 +95,7 @@ class PlantUMLWriterTest {
 		try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
 			w.beginDiagram("D");
 			w.beginPackage("P");
-			w.beginClass("A", "");
+			w.beginClass("A", "", "");
 			w.endClass("A");
 			w.endPackage("P");
 			w.endDiagram("D");

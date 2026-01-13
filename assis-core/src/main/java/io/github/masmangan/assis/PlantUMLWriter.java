@@ -288,8 +288,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginClass(final String name, final String stereotypes) {
-		beginType("class", name, stereotypes);
+	public void beginClass(final String name, final String visibility, final String stereotypes) {
+		beginType("class", name, visibility, stereotypes);
 	}
 
 	/**
@@ -320,8 +320,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginAbstractClass(final String name, final String stereotypes) {
-		beginType("abstract class", name, stereotypes);
+	public void beginAbstractClass(final String name, String visibility, final String stereotypes) {
+		beginType("abstract class", name, visibility, stereotypes);
 	}
 
 	/**
@@ -353,8 +353,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginInterface(final String name, final String stereotypes) {
-		beginType("interface", name, stereotypes);
+	public void beginInterface(final String name, final String visibility, final String stereotypes) {
+		beginType("interface", name, visibility, stereotypes);
 	}
 
 	/**
@@ -384,8 +384,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginRecord(final String name, final String stereotypes) {
-		beginType("record", name, stereotypes);
+	public void beginRecord(final String name, final String visibility, final String stereotypes) {
+		beginType("record", name, visibility, stereotypes);
 	}
 
 	/**
@@ -415,8 +415,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginEnum(final String name, final String stereotypes) {
-		beginType("enum", name, stereotypes);
+	public void beginEnum(final String name, final String visibility, final String stereotypes) {
+		beginType("enum", name, visibility, stereotypes);
 	}
 
 	/**
@@ -446,8 +446,8 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code name} contains {@code "},
 	 *                                  {@code "\n"}, or {@code "\r"}
 	 */
-	public void beginAnnotation(final String name, final String stereotypes) {
-		beginType("annotation", name, stereotypes);
+	public void beginAnnotation(final String name, final String visibility, final String stereotypes) {
+		beginType("annotation", name, visibility, stereotypes);
 	}
 
 	/**
@@ -610,10 +610,10 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @param name
 	 * @param stereotypes
 	 */
-	private void beginType(final String keyword, final String name, final String stereotypes) {
+	private void beginType(final String keyword, final String name, final String visibility, final String stereotypes) {
 		checkName(name);
 		checkStereotypes(stereotypes);
-		println("%s \"%s\"%s { /' @assis:begin %s \"%s\" '/".formatted(keyword, name.strip(),
+		println("%s%s \"%s\"%s { /' @assis:begin %s \"%s\" '/".formatted(visibility, keyword, name.strip(),
 				prefixIfPresent(" ", stereotypes.strip()), keyword, name.strip()));
 		indent();
 	}
