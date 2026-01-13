@@ -77,13 +77,35 @@ import java.util.Objects;
  */
 public final class PlantUMLWriter implements AutoCloseable {
 
+	/**
+	 *
+	 */
 	private static final String COLON_SEPARATOR = ":";
-
+	
+	/**
+	 *
+	 */
 	private static final String SPACE_STRING = " ";
 
+	/**
+	 *
+	 */
 	private static final String EMPTY_STRING = "";
 
+	/**
+	 *
+	 */
 	private static final String INDENT_UNIT = "  ";
+
+	/**
+	 *
+	 */
+	private static final String IS_A_IMPLEMENTS = "..|>";
+	
+	/**
+	 *
+	 */
+	private static final String IS_A_EXTENDS = "--|>";
 
 	/**
 	 *
@@ -95,8 +117,14 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 */
 	private static final String HAS_A = "--->"; // longer line because of role and stereotype label
 
+	/**
+	 *
+	 */
 	private final PrintWriter out;
 
+	/**
+	 *
+	 */
 	private int indentLevel;
 
 	/**
@@ -118,12 +146,16 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 */
 	public void println(final String line) {
 		if (activeTag != null) {
-			printlnInternal(activeTag + " " + line);
+			printlnInternal("/' " + activeTag + EMPTY_STRING + line + " '/");
 		} else {
 			printlnInternal(line);
 		}
 	}
 
+	/**
+	 * 
+	 * @param line
+	 */
 	private void printlnInternal(final String line) {
 		Objects.requireNonNull(line, "line");
 		out.println(INDENT_UNIT.repeat(indentLevel) + line);
@@ -446,19 +478,66 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws IllegalArgumentException if {@code owner} or {@code owned} contains
 	 *                                  {@code "}, {@code "\n"}, or {@code "\r"}
 	 */
-	public void connectInnerType(String owner, String owned) {
-		checkName(owner);
-		checkName(owned);
-		println("\"%s\" %s \"%s\"".formatted(owner, HAS_A_INNER, owned));
+	public void connectInnerType(String outerType, String innerType) {
+		checkName(outerType);
+		checkName(innerType);
+		println("\"%s\" %s \"%s\"".formatted(outerType, HAS_A_INNER, innerType));
 	}
 
-	public void connectAssociation(String source, String target, String role, String stereotypes) {
-		checkName(source);
-		checkName(target);
+	/**
+	 * 
+	 * @param subType
+	 * @param superType
+	 */
+	public void connectImplements(String subType, String superType) {
+		checkName(subType);
+		checkName(superType);
+
+		out.print(quote(subType));
+
+		out.print(SPACE_STRING);
+		out.print(IS_A_IMPLEMENTS);
+
+		out.print(SPACE_STRING);
+		out.print(quote(superType));
+
+		out.println();
+	}
+	
+	/**
+	 * 
+	 * @param subType
+	 * @param superType
+	 */
+	public void connectExtends(String subType, String superType) {
+		checkName(subType);
+		checkName(superType);
+
+		out.print(quote(subType));
+
+		out.print(SPACE_STRING);
+		out.print(IS_A_EXTENDS);
+
+		out.print(SPACE_STRING);
+		out.print(quote(superType));
+
+		out.println();
+	}
+	
+	/**
+	 * 
+	 * @param sourceType
+	 * @param targetType
+	 * @param role
+	 * @param stereotypes
+	 */
+	public void connectAssociation(String sourceType, String targetType, String role, String stereotypes) {
+		checkName(sourceType);
+		checkName(targetType);
 		checkName(role);
 		checkStereotypes(stereotypes);
 
-		out.print(quote(source));
+		out.print(quote(sourceType));
 
 		out.print(SPACE_STRING);
 		out.print(HAS_A);
@@ -469,7 +548,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 		}
 
 		out.print(SPACE_STRING);
-		out.print(quote(target));
+		out.print(quote(targetType));
 
 		if (!stereotypes.isBlank()) {
 			out.print(SPACE_STRING);
@@ -481,13 +560,18 @@ public final class PlantUMLWriter implements AutoCloseable {
 		out.println();
 	}
 
-	private String quote(String s) {
+	private static String quote(String s) {
 		return "\"" + s.strip() + "\"";
 	}
 
 	// tag
 	private String activeTag;
 
+	/**
+	 * 
+	 * @param tag
+	 * @param action
+	 */
 	public void withBeforeTag(String tag, Runnable action) {
 		checkTag(tag);
 		if (activeTag != null) {
