@@ -9,7 +9,7 @@ as SVG images using local tools.
 
 No IDE is required.
 
-> Verified with ASSIS v0.9.3 (beta)
+> Verified with ASSIS v0.9.4-beta
 
 ---
 

@@ -4,7 +4,7 @@ This guide shows how to run **ASSIS CLI** from the command line and generate you
 
 No IDE is required.
 
-> The instructions below were validated with **ASSIS v0.9.3-beta**.
+> The instructions below were validated with **ASSIS v0.9.4-beta**.
 
 ---
 
@@ -44,16 +44,16 @@ This directory will hold:
 
 Download the ASSIS CLI JAR file from GitHub Releases.
 
-For **v0.9.3**:
+For **v0.9.4-beta**:
 
 ```bash
-wget https://github.com/masmangan/assis/releases/download/v0.9.3/assis-cli-0.9.3-beta.jar -O assis.jar
+wget -O assis.jar https://github.com/masmangan/assis/releases/download/v0.9.4-beta/assis-cli-0.9.4-beta.jar 
 ```
 
 If `wget` is not available, you may use:
 
 ```bash
-curl -L https://github.com/masmangan/assis/releases/download/v0.9.3/assis-cli-0.9.3-beta.jar -o assis.jar
+curl -L -o assis.jar https://github.com/masmangan/assis/releases/download/v0.9.4-beta/assis-cli-0.9.4-beta.jar 
 ```
 
 Or download the file manually from:

@@ -5,7 +5,7 @@
 
 	<groupId>io.github.masmangan</groupId>
 	<artifactId>assis</artifactId>
-	<version>0.9.4-beta</version>
+	<version>0.9.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>ASSIS (parent)</name>

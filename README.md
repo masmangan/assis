@@ -9,7 +9,7 @@ Generate UML diagrams from Java code.
 **Do you have a terminal available?**  
 Check the [Getting Started Guide](./docs/user/assis-gs-bash.md).
 
-> The instructions below were validated with **ASSIS v0.9.3-beta**.
+> The instructions below were validated with **ASSIS v0.9.4-beta**.
 
 ## Usage
 
@@ -18,10 +18,9 @@ Check the [Getting Started Guide](./docs/user/assis-gs-bash.md).
 Download the latest release from:  
 https://github.com/masmangan/assis/releases
 
-For **v0.9.3**, the released CLI artifact is:
+For **v0.9.4-beta**, the released CLI artifact is:
 
-https://github.com/masmangan/assis/releases/download/v0.9.3/assis-cli-0.9.3-beta.jar
-
+https://github.com/masmangan/assis/releases/download/v0.9.4-beta/assis-cli-0.9.4-beta.jar
 Older releases are kept for reference, but documentation always targets the latest release.
 
 ### Run ASSIS
@@ -34,7 +33,7 @@ Place the JAR in the project root folder (or any folder of your choice).
 Run ASSIS from the command line:
 
 ```bash
-java -jar assis-cli-0.9.3-beta.jar
+java -jar assis-cli-0.9.4-beta.jar
 ```
 
 After execution, a `class-diagram.puml` file will be generated.
@@ -56,7 +55,7 @@ mvn -DskipTests package
 ### Run with JAR (from source build)
 
 ```bash
-java -jar assis-cli/target/assis-cli-0.9.3.jar
+java -jar assis-cli/target/assis-cli-0.9.4-beta.jar
 ```
 
 ### Run with Maven
