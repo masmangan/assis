@@ -38,24 +38,24 @@ public class DeclaredIndex {
 	 */
 	private static final String PACKAGE_SEPARATOR = ".";
 
-	/** 
-	 * FQN → declaration 
-	 * */
+	/**
+	 * FQN → declaration
+	 */
 	public final Map<String, TypeDeclaration<?>> byFqn = new LinkedHashMap<>();
 
-	/** 
-	 * FQN → declared package (from CompilationUnit) 
-	 * */
+	/**
+	 * FQN → declared package (from CompilationUnit)
+	 */
 	final Map<String, String> pkgByFqn = new LinkedHashMap<>();
 
-	/** 
-	 * package → list of FQNs 
-	 * */
+	/**
+	 * package → list of FQNs
+	 */
 	Map<String, List<String>> fqnsByPkg = new LinkedHashMap<>();
 
-	/** 
-	 * simple name → unique FQN (only when unambiguous) 
-	 * 
+	/**
+	 * simple name → unique FQN (only when unambiguous)
+	 *
 	 */
 	final Map<String, String> uniqueBySimple = new LinkedHashMap<>();
 
@@ -133,27 +133,36 @@ public class DeclaredIndex {
 		return uniqueBySimple.get(simple);
 	}
 
+	/**
+	 *
+	 * @param td
+	 * @return
+	 */
 	public static String deriveFqnDollar(TypeDeclaration<?> td) {
-	  String pkg = derivePkg(td);
-	
-	  // walk up TypeDeclaration parents to build nested chain
-	  Deque<String> names = new ArrayDeque<>();
-	  Node cur = td;
-	  while (cur != null) {
-	    if (cur instanceof TypeDeclaration<?> t) {
-	      names.push(t.getNameAsString());
-	    }
-	    cur = cur.getParentNode().orElse(null);
-	  }
-	  String chain = String.join("$", names);
-	
-	  return pkg.isEmpty() ? chain : pkg + "." + chain;
+		String pkg = derivePkg(td);
+
+		// walk up TypeDeclaration parents to build nested chain
+		Deque<String> names = new ArrayDeque<>();
+		Node cur = td;
+		while (cur != null) {
+			if (cur instanceof TypeDeclaration<?> t) {
+				names.push(t.getNameAsString());
+			}
+			cur = cur.getParentNode().orElse(null);
+		}
+		String chain = String.join("$", names);
+
+		return pkg.isEmpty() ? chain : pkg + "." + chain;
 	}
 
+	/**
+	 *
+	 * @param td
+	 * @return
+	 */
 	static String derivePkg(TypeDeclaration<?> td) {
-	  return td.findCompilationUnit()
-	      .flatMap(cu -> cu.getPackageDeclaration().map(pd -> pd.getNameAsString()))
-	      .orElse(""); // default package
+		return td.findCompilationUnit().flatMap(cu -> cu.getPackageDeclaration().map(pd -> pd.getNameAsString()))
+				.orElse(""); // default package
 	}
 
 	/**
@@ -228,12 +237,15 @@ public class DeclaredIndex {
 	static String qPuml(String fqn) {
 		return "\"" + pumlName(fqn) + "\"";
 	}
-	
-	
+
+	/**
+	 *
+	 * @param td
+	 * @return
+	 */
 	static boolean isTopLevel(TypeDeclaration<?> td) {
 		return td.getParentNode().isPresent()
-			    && td.getParentNode().get() instanceof com.github.javaparser.ast.CompilationUnit;
-
+				&& td.getParentNode().get() instanceof com.github.javaparser.ast.CompilationUnit;
 
 	}
 }

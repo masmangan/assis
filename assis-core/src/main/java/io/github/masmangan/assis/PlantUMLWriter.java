@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * A writer that emits PlantUML statements to a {@link PrintWriter}.
- * 
+ *
  * <p>
  * Output is line-based: each call to {@link #println(String)} writes a single
  * line. This class provides helper methods to emit common block constructs such
@@ -21,34 +21,34 @@ import java.util.Objects;
  * Blocks started with {@code begin*} methods must be closed with a
  * corresponding {@code end*} method. While inside a package or type block,
  * subsequent lines are indented by two spaces per indentation level.
- * 
+ *
  * <p>
  * End a type block before beginning another type block.
- * 
+ *
  * <p>
  * This class performs no validation of PlantUML syntax and does not attempt to
- * enforce balanced blocks. 
- * 
+ * enforce balanced blocks.
+ *
  * <p>
  * For format integrity, names must be fully qualified, single-lined and must
  * not contain double quotes ("). Violations cause IllegalArgumentException.
- * 
+ *
  * <p>
  * PlantUML does not support true nested type declarations. To represent Java
  * inner or nested types, emit each type as a separate PlantUML type and encode
  * the nesting relationship in the type name using a separator.
- * 
+ *
  * <p>
  * Package qualification follows standard Java fully qualified naming, using the
  * {@code .} (dot) separator. Avoid using {@code .} to encode nesting; treat
  * {@code .} as package qualification.
- * 
+ *
  * <p>
  * Structural relationships between types (such as nesting, inheritance, and
  * interface implementation) are rendered separately using standard PlantUML
  * relationship syntax. For details on relationship notation, refer to the
  * PlantUML documentation.
- * 
+ *
  * <p>
  * For example, the Java source:
  *
@@ -500,7 +500,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param source
 	 * @param target
 	 */

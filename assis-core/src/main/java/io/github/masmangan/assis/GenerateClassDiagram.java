@@ -253,6 +253,11 @@ public class GenerateClassDiagram {
 		}
 	}
 
+	/**
+	 *
+	 * @param idx
+	 * @param pw
+	 */
 	private static void writeDependencies(final DeclaredIndex idx, PlantUMLWriter pw) {
 		DependencyContext context = new DependencyContext(idx, pw);
 		CollectDependenciesVisitor dependenciesVisitor = new CollectDependenciesVisitor();
@@ -281,10 +286,20 @@ public class GenerateClassDiagram {
 		}
 	}
 
+	/**
+	 *
+	 * @param idx
+	 * @param pw
+	 */
 	private static void writeStructuralRelations(final DeclaredIndex idx, PlantUMLWriter pw) {
 		new CollectRelationshipsVisitor(idx, pw).emitAll();
 	}
 
+	/**
+	 *
+	 * @param idx
+	 * @param pw
+	 */
 	private static void writeTypes(final DeclaredIndex idx, PlantUMLWriter pw) {
 		for (var entry : idx.fqnsByPkg.entrySet()) {
 			String pkg = entry.getKey();

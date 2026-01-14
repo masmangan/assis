@@ -35,7 +35,6 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 	 */
 	private final Deque<TypeDeclaration<?>> ownerStack = new ArrayDeque<>();
 
-
 	@Override
 	public void visit(ClassOrInterfaceDeclaration n, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Collecting dependencies for " + n);
@@ -44,6 +43,7 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		super.visit(n, ctx);
 		exit();
 	}
+
 	@Override
 	public void visit(ObjectCreationExpr n, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Object creationg for " + n);
@@ -51,12 +51,20 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		recordTypeUse(n.getType(), n, ctx);
 		super.visit(n, ctx);
 	}
+
 	@Override
 	public void visit(EnumDeclaration n, DependencyContext ctx) {
 		enter(n);
 		super.visit(n, ctx);
 		exit();
 	}
+
+	/**
+	 *
+	 * @param typeNode
+	 * @param site
+	 * @param ctx
+	 */
 	private void recordTypeUse(Type typeNode, Node site, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Record Type Use for " + typeNode);
 
@@ -71,6 +79,7 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 			cit.getTypeArguments().ifPresent(args -> args.forEach(arg -> recordTypeUse(arg, site, ctx)));
 		}
 	}
+
 	@Override
 	public void visit(RecordDeclaration n, DependencyContext ctx) {
 		enter(n);
@@ -101,8 +110,6 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		return ownerStack.peek();
 	}
 
-
-
 	@Override
 	public void visit(InstanceOfExpr n, DependencyContext ctx) {
 		recordTypeUse(n.getType(), n, ctx);
@@ -131,14 +138,12 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		super.visit(n, ctx);
 	}
 
-
 	/**
 	 *
 	 * @param typeNode
 	 * @param site
 	 * @param ctx
 	 */
-
 
 	/**
 	 *
