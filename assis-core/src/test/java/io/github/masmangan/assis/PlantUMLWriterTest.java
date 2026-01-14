@@ -167,4 +167,21 @@ class PlantUMLWriterTest {
 
 	    assertEquals(expected, sw.toString());
 	}
+	
+	@Test
+	void dependency() {
+	    StringWriter sw = new StringWriter();
+
+	    try (PlantUMLWriter w = new PlantUMLWriter(new PrintWriter(sw))) {
+	             w.connectDepends("A", "B");	
+	    } catch (Exception e) {
+	        fail(e);
+	    }
+
+	    String expected = """
+	            "A" ..> "B"
+	            """;
+
+	    assertEquals(expected, sw.toString());
+	}
 }

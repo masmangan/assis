@@ -10,7 +10,7 @@ import java.util.Objects;
 
 /**
  * A writer that emits PlantUML statements to a {@link PrintWriter}.
- *
+ * 
  * <p>
  * Output is line-based: each call to {@link #println(String)} writes a single
  * line. This class provides helper methods to emit common block constructs such
@@ -21,30 +21,34 @@ import java.util.Objects;
  * Blocks started with {@code begin*} methods must be closed with a
  * corresponding {@code end*} method. While inside a package or type block,
  * subsequent lines are indented by two spaces per indentation level.
- *
+ * 
+ * <p>
+ * End a type block before beginning another type block.
+ * 
  * <p>
  * This class performs no validation of PlantUML syntax and does not attempt to
- * enforce balanced blocks.
+ * enforce balanced blocks. 
+ * 
  * <p>
  * For format integrity, names must be fully qualified, single-lined and must
  * not contain double quotes ("). Violations cause IllegalArgumentException.
- * <p>
- * End a type block before beginning another type block.
+ * 
  * <p>
  * PlantUML does not support true nested type declarations. To represent Java
  * inner or nested types, emit each type as a separate PlantUML type and encode
  * the nesting relationship in the type name using a separator.
- * <p>
- * Relationship
+ * 
  * <p>
  * Package qualification follows standard Java fully qualified naming, using the
  * {@code .} (dot) separator. Avoid using {@code .} to encode nesting; treat
  * {@code .} as package qualification.
+ * 
  * <p>
  * Structural relationships between types (such as nesting, inheritance, and
  * interface implementation) are rendered separately using standard PlantUML
  * relationship syntax. For details on relationship notation, refer to the
  * PlantUML documentation.
+ * 
  * <p>
  * For example, the Java source:
  *
@@ -67,6 +71,12 @@ import java.util.Objects;
  * pw.endClass("p.A$B");
  *
  * pw.println("\"p.A\" +-- \"p.A$B\""); // Raw PlantUML: caller provides correct quoting.
+ * }</pre>
+ * <p>
+ * Or using a convenience method:
+ *
+ * <pre>{@code
+ * pw.connectInnerType("p.A", "p.A$B"); // Convenience: quoting is automatically provided.
  * }</pre>
  * <p>
  * Closing this writer flushes its output but does not close the underlying
@@ -116,6 +126,11 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 *
 	 */
 	private static final String HAS_A = "--->"; // longer line because of role and stereotype label
+
+	/**
+	 *
+	 */
+	private static final String USES = "..>";
 
 	/**
 	 *
@@ -485,6 +500,36 @@ public final class PlantUMLWriter implements AutoCloseable {
 	}
 
 	/**
+	 * 
+	 * @param source
+	 * @param target
+	 */
+	public void connectDepends(String source, String target) {
+		checkName(source);
+		checkName(target);
+
+		if (activeTag != null) {
+			out.print("/'");
+			out.print(SPACE_STRING);
+			out.print(activeTag);
+			out.print(SPACE_STRING);
+		}
+
+		out.print(quote(source));
+		out.print(SPACE_STRING);
+		out.print(USES);
+		out.print(SPACE_STRING);
+		out.print(quote(target));
+
+		if (activeTag != null) {
+			out.print(SPACE_STRING);
+			out.print("'/");
+		}
+
+		out.println();
+	}
+
+	/**
 	 *
 	 * @param subType
 	 * @param superType
@@ -523,6 +568,7 @@ public final class PlantUMLWriter implements AutoCloseable {
 	public void connectExtends(String subType, String superType) {
 		checkName(subType);
 		checkName(superType);
+
 		if (activeTag != null) {
 			out.print("/'");
 			out.print(SPACE_STRING);
