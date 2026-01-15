@@ -18,6 +18,7 @@ import io.github.masmangan.assis.PlantUMLWriter;
  *
  */
 public class DependencyContext {
+	
 	/**
 	 * Logger used by the generator to report progress and parse/write issues.
 	 */
@@ -103,10 +104,8 @@ public class DependencyContext {
 		if (to instanceof DeclaredTypeRef dtr) {
 			toFqn = DeclaredIndex.deriveFqnDollar(dtr.declaration());
 		}
-
 		pw.connectDepends(fromFqn, toFqn);
 		deps.add(new DepKey(from, to));
-
 	}
 
 	/**
