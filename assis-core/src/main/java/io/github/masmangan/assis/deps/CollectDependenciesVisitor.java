@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.CastExpr;
@@ -38,7 +39,6 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 	@Override
 	public void visit(ClassOrInterfaceDeclaration n, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Collecting dependencies for " + n);
-
 		enter(n);
 		super.visit(n, ctx);
 		exit();
@@ -47,7 +47,6 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 	@Override
 	public void visit(ObjectCreationExpr n, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Object creationg for " + n);
-
 		recordTypeUse(n.getType(), n, ctx);
 		super.visit(n, ctx);
 	}
@@ -59,57 +58,13 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		exit();
 	}
 
-	/**
-	 *
-	 * @param typeNode
-	 * @param site
-	 * @param ctx
-	 */
-	private void recordTypeUse(Type typeNode, Node site, DependencyContext ctx) {
-		logger.log(Level.INFO, () -> "Record Type Use for " + typeNode);
-
-		if (ownerStack.isEmpty()) {
-			return;
-		}
-
-		ctx.resolveTarget(typeNode, site).ifPresent(target -> collect(owner(), target, ctx));
-
-		// unwrap generic arguments
-		if (typeNode instanceof ClassOrInterfaceType cit) {
-			cit.getTypeArguments().ifPresent(args -> args.forEach(arg -> recordTypeUse(arg, site, ctx)));
-		}
-	}
-
 	@Override
 	public void visit(RecordDeclaration n, DependencyContext ctx) {
 		enter(n);
 		super.visit(n, ctx);
 		exit();
 	}
-
-	/**
-	 *
-	 * @param td
-	 */
-	private void enter(TypeDeclaration<?> td) {
-		ownerStack.push(td);
-	}
-
-	/**
-	 *
-	 */
-	private void exit() {
-		ownerStack.pop();
-	}
-
-	/**
-	 *
-	 * @return
-	 */
-	private TypeDeclaration<?> owner() {
-		return ownerStack.peek();
-	}
-
+	
 	@Override
 	public void visit(InstanceOfExpr n, DependencyContext ctx) {
 		recordTypeUse(n.getType(), n, ctx);
@@ -138,13 +93,63 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		super.visit(n, ctx);
 	}
 
+	
+	@Override
+	public void visit(MethodDeclaration md, DependencyContext ctx) {
+		logger.log(Level.INFO, () -> "Collecting dependencies for " + md);
+	    super.visit(md, ctx);
+	    // Return type dependency (skip void)
+	    if (!md.getType().isVoidType()) {
+	        ctx.resolveTarget(md.getType(), md)
+	           .ifPresent(to -> ctx.addDependency(owner(), to));
+	    }
+	}
+
+	
 	/**
 	 *
 	 * @param typeNode
 	 * @param site
 	 * @param ctx
 	 */
+	private void recordTypeUse(Type typeNode, Node site, DependencyContext ctx) {
+		logger.log(Level.INFO, () -> "Record Type Use for " + typeNode);
+		if (ownerStack.isEmpty()) {
+			return;
+		}
 
+		ctx.resolveTarget(typeNode, site).ifPresent(target -> collect(owner(), target, ctx));
+
+		// unwrap generic arguments
+		if (typeNode instanceof ClassOrInterfaceType cit) {
+			cit.getTypeArguments().ifPresent(args -> args.forEach(arg -> recordTypeUse(arg, site, ctx)));
+		}
+	}
+
+
+	/**
+	 *
+	 * @param td
+	 */
+	private void enter(TypeDeclaration<?> td) {
+		ownerStack.push(td);
+	}
+
+	/**
+	 *
+	 */
+	private void exit() {
+		ownerStack.pop();
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	private TypeDeclaration<?> owner() {
+		return ownerStack.peek();
+	}	
+	
 	/**
 	 *
 	 * @param simpleName
