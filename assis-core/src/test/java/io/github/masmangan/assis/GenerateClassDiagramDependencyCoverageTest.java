@@ -21,20 +21,14 @@ class GenerateClassDiagramDependencyCoverageSamplesTest {
 
     @TempDir
     Path tempDir;
-
-    // -------------------------------------------------------------------------
-    // Dep 01 — Method return type creates dependency
-    // package p1; class B {} class A { B m(){ return null; } }
-    // Expect: "p1.A" ..> "p1.B"
-    // -------------------------------------------------------------------------
-
+    
     @Disabled("Enable one test at a time while adding samples and implementing '..>' emission.")
     @Test
     void dep01_methodReturnTypeCreatesDependency() throws Exception {
         String puml = generatePumlFromSample(
-                "samples/deps/dep01-return",
+                "samples/deps/byreturn",
                 tempDir,
-                "dep01-return"
+                "byreturn"
         );
 
         assertPumlContainsName(puml, "p1.A");
