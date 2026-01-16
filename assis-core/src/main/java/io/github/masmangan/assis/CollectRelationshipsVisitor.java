@@ -319,7 +319,8 @@ class CollectRelationshipsVisitor {
 		Type t = peelArrays(type);
 
 		if (t.isClassOrInterfaceType()) {
-			return t.asClassOrInterfaceType().getNameAsString();
+			// return t.asClassOrInterfaceType().getNameAsString();
+			return t.asClassOrInterfaceType().getNameWithScope();
 		}
 		return t.asString();
 	}
