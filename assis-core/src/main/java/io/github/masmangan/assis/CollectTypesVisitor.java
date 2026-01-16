@@ -122,8 +122,7 @@ class CollectTypesVisitor {
 	 *
 	 * <p>
 	 * The caller must provide {@code fqn} that matches the key used in
-	 * {@link DeclaredIndex#byFqn}. The emitted identifier is derived via
-	 * {@link DeclaredIndex#pumlName(String)}.
+	 * {@link DeclaredIndex#byFqn}. 
 	 *
 	 * @param fqn fully-qualified name for the type (ASSIS convention for nested
 	 *            types applies); must not be {@code null}
@@ -132,47 +131,46 @@ class CollectTypesVisitor {
 	 */
 	void emitType(String fqn, TypeDeclaration<?> td) {
 		String stereotypes = typeStereotypes(td);
-		String pumlName = DeclaredIndex.pumlName(fqn);
 		String vis = GenerateClassDiagram.visibility(td);
 
 		pw.println();
 
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
 			if (cid.isInterface()) {
-				pw.beginInterface(pumlName, vis, stereotypes);
+				pw.beginInterface(fqn, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
-				pw.endInterface(pumlName);
+				pw.endInterface(fqn);
 			} else if (cid.isAbstract()) {
-				pw.beginAbstractClass(pumlName, vis, stereotypes);
+				pw.beginAbstractClass(fqn, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
-				pw.endAbstractClass(pumlName);
+				pw.endAbstractClass(fqn);
 			} else if (cid.isFinal()) {
-				pw.beginClass(pumlName, vis, finalClassStereotypes(td));
+				pw.beginClass(fqn, vis, finalClassStereotypes(td));
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
-				pw.endClass(pumlName);
+				pw.endClass(fqn);
 			} else {
-				pw.beginClass(pumlName, vis, stereotypes);
+				pw.beginClass(fqn, vis, stereotypes);
 				emitFields(fqn, cid.getFields());
 				emitConstructors(cid.getConstructors());
 				emitMethods(cid.getMethods());
 
-				pw.endClass(pumlName);
+				pw.endClass(fqn);
 			}
 
 			return;
 		}
 
 		if (td instanceof RecordDeclaration rd) {
-			pw.beginRecord(pumlName, vis, stereotypes);
+			pw.beginRecord(fqn, vis, stereotypes);
 
 			emitRecordComponents(fqn, rd);
 
@@ -188,24 +186,24 @@ class CollectTypesVisitor {
 			emitConstructors(rd.getConstructors());
 			emitMethods(rd.getMethods());
 
-			pw.endRecord(pumlName);
+			pw.endRecord(fqn);
 			return;
 		}
 
 		if (td instanceof EnumDeclaration ed) {
-			pw.beginEnum(pumlName, vis, stereotypes);
+			pw.beginEnum(fqn, vis, stereotypes);
 			emitEnumConstants(ed);
 			emitFields(fqn, ed.getFields());
 			emitConstructors(ed.getConstructors());
 			emitMethods(ed.getMethods());
-			pw.endEnum(pumlName);
+			pw.endEnum(fqn);
 			return;
 		}
 
 		if (td instanceof AnnotationDeclaration ad) {
-			pw.beginAnnotation(pumlName, vis, stereotypes);
+			pw.beginAnnotation(fqn, vis, stereotypes);
 			emitAnnotationMembers(ad);
-			pw.endAnnotation(pumlName);
+			pw.endAnnotation(fqn);
 			return;
 		}
 
@@ -317,7 +315,7 @@ class CollectTypesVisitor {
 	 *
 	 * <p>
 	 * Field declarations are sorted by the first variable name for deterministic
-	 * output. Each variable declarator is handled independently.
+	 * output. Each variable declaration is handled independently.
 	 *
 	 * <p>
 	 * Fields whose type resolves to another declared type are suppressed here so
