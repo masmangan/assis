@@ -95,7 +95,11 @@ public class GenerateClassDiagram {
 	public static void generate(final Set<Path> sourceRoots, final Path outDir) throws IOException {
 		Objects.requireNonNull(sourceRoots, "sourceRoots");
 		Objects.requireNonNull(outDir, "outDir");
-
+		Path dir = outDir.normalize();
+		
+		if (Files.exists(dir) && !Files.isDirectory(dir)) {
+			throw new IllegalArgumentException("outDir must be a directory: " + dir.toAbsolutePath());
+		}
 		DeclaredIndex index = new DeclaredIndex();
 		List<CompilationUnit> units = new ArrayList<>();
 
@@ -106,17 +110,10 @@ public class GenerateClassDiagram {
 		logger.log(Level.FINE, () -> "**   pkgByFqn   ** " + index.pkgByFqn.toString());
 		logger.log(Level.FINE, () -> "**uniqueBySimple** " + index.uniqueBySimple.toString());
 
-		logger.log(Level.FINE, () -> "**      CUS     **" + units.toString());
+		logger.log(Level.FINE, () -> "**    UNITS     **" + units.toString());
 
-		Path dir = outDir.normalize();
-
-		if (Files.exists(dir) && !Files.isDirectory(dir)) {
-			throw new IllegalArgumentException("outDir must be a directory: " + dir.toAbsolutePath());
-		}
 		Files.createDirectories(dir);
-
 		Path outputFile = dir.resolve("class-diagram.puml");
-
 		logger.log(Level.INFO, () -> "Writing " + outputFile);
 
 		writeDiagram(outputFile, index);
