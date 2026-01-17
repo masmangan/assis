@@ -122,7 +122,7 @@ class CollectTypesVisitor {
 	 *
 	 * <p>
 	 * The caller must provide {@code fqn} that matches the key used in
-	 * {@link DeclaredIndex#byFqn}. 
+	 * {@link DeclaredIndex#byFqn}.
 	 *
 	 * @param fqn fully-qualified name for the type (ASSIS convention for nested
 	 *            types applies); must not be {@code null}
