@@ -64,7 +64,7 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		super.visit(n, ctx);
 		exit();
 	}
-	
+
 	@Override
 	public void visit(InstanceOfExpr n, DependencyContext ctx) {
 		recordTypeUse(n.getType(), n, ctx);
@@ -93,19 +93,16 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 		super.visit(n, ctx);
 	}
 
-	
 	@Override
 	public void visit(MethodDeclaration md, DependencyContext ctx) {
 		logger.log(Level.INFO, () -> "Collecting dependencies for " + md);
-	    super.visit(md, ctx);
-	    // Return type dependency (skip void)
-	    if (!md.getType().isVoidType()) {
-	        ctx.resolveTarget(md.getType(), md)
-	           .ifPresent(to -> ctx.addDependency(owner(), to));
-	    }
+		super.visit(md, ctx);
+		// Return type dependency (skip void)
+		if (!md.getType().isVoidType()) {
+			ctx.resolveTarget(md.getType(), md).ifPresent(to -> ctx.addDependency(owner(), to));
+		}
 	}
 
-	
 	/**
 	 *
 	 * @param typeNode
@@ -125,7 +122,6 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 			cit.getTypeArguments().ifPresent(args -> args.forEach(arg -> recordTypeUse(arg, site, ctx)));
 		}
 	}
-
 
 	/**
 	 *
@@ -148,8 +144,8 @@ public final class CollectDependenciesVisitor extends VoidVisitorAdapter<Depende
 	 */
 	private TypeDeclaration<?> owner() {
 		return ownerStack.peek();
-	}	
-	
+	}
+
 	/**
 	 *
 	 * @param simpleName
