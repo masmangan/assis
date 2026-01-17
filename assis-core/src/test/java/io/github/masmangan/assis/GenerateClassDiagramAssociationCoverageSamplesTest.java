@@ -32,6 +32,34 @@ class GenerateClassDiagramAssociationCoverageSamplesTest {
 	}
 
 	@Test
+	void generatesAssociationForSimpleFieldAnotherPackageP1() throws Exception {
+		String puml = generatePumlFromSample("samples/solver/pkgfieldsp1", tempDir, "pkgfieldsp1");
+
+		assertPumlContainsName(puml, "p1.A");
+		assertPumlContainsName(puml, "p2.B");
+		assertAnyLineContainsAll(puml, "p2.B", "-->", "a", "p1.A");
+	}
+
+	@Test
+	void generatesAssociationForSimpleFieldAnotherPackageP2() throws Exception {
+		String puml = generatePumlFromSample("samples/solver/pkgfieldsp2", tempDir, "pkgfieldsp2");
+
+		assertPumlContainsName(puml, "p2.A");
+		assertPumlContainsName(puml, "p1.B");
+		assertAnyLineContainsAll(puml, "p1.B", "-->", "a", "p2.A");
+	}
+
+	@Test
+	void generatesAssociationForSimpleFieldAnotherPackageP3() throws Exception {
+		String puml = generatePumlFromSample("samples/solver/pkgfieldsp3", tempDir, "pkgfieldsp3");
+
+		assertPumlContainsName(puml, "p1.A");
+		assertPumlContainsName(puml, "p2.A");
+		assertPumlContainsName(puml, "p3.B");
+		assertAnyLineContainsAll(puml, "p3.B", "-->", "a", "p1.A");
+	}
+
+	@Test
 	void generatesAssociationsForArrays1dAnd2d() throws Exception {
 		String puml = generatePumlFromSample("samples/associations/arrays", tempDir, "arrays");
 
