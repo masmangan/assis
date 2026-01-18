@@ -3,12 +3,12 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis.deps;
+package io.github.masmangan.assis.internal;
 
 /**
  *
  */
-public record UnresolvedTypeRef(String name) implements TypeRef {
+record UnresolvedTypeRef(String name) implements TypeRef {
 
 	@Override
 	public String displayName() {

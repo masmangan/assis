@@ -3,12 +3,12 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis.deps;
+package io.github.masmangan.assis.internal;
 
 /**
  *
  */
-public sealed interface TypeRef permits DeclaredTypeRef, ExternalTypeRef, UnresolvedTypeRef {
+sealed interface TypeRef permits DeclaredTypeRef, ExternalTypeRef, UnresolvedTypeRef {
 
 	String displayName();
 }

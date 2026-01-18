@@ -3,14 +3,14 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis.deps;
+package io.github.masmangan.assis.internal;
 
 import com.github.javaparser.ast.body.TypeDeclaration;
 
 /**
  *
  */
-public record DeclaredTypeRef(TypeDeclaration<?> declaration) implements TypeRef {
+record DeclaredTypeRef(TypeDeclaration<?> declaration) implements TypeRef {
 
 	@Override
 	public String displayName() {
