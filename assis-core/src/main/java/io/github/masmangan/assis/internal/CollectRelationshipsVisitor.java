@@ -54,7 +54,7 @@ class CollectRelationshipsVisitor {
 	/**
 	 * Logger used by the generator to report progress and parse/write issues.
 	 */
-	static final Logger logger = Logger.getLogger(CollectRelationshipsVisitor.class.getName());
+	private static final Logger logger = Logger.getLogger(CollectRelationshipsVisitor.class.getName());
 
 	/**
 	 *
@@ -258,7 +258,7 @@ class CollectRelationshipsVisitor {
 	 * @param p
 	 * @return
 	 */
-	private String stereotypesToString(Parameter p) {
+	private static String stereotypesToString(Parameter p) {
 		return DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
 	}
 
@@ -342,17 +342,16 @@ class CollectRelationshipsVisitor {
 	 * @param type
 	 * @return
 	 */
-	private String rawNameOf(Type type) {
+	private static String rawNameOf(Type type) {
 		Type t = peelArrays(type);
 
 		if (t.isClassOrInterfaceType()) {
-			// return t.asClassOrInterfaceType().getNameAsString();
 			return t.asClassOrInterfaceType().getNameWithScope();
 		}
 		return t.asString();
 	}
 
-	private Optional<String> debugResolve(Type type) {
+	private static Optional<String> debugResolve(Type type) {
 		try {
 			if (!(type instanceof ClassOrInterfaceType cit)) {
 				logger.fine(() -> "Skip non-reference type: " + type);

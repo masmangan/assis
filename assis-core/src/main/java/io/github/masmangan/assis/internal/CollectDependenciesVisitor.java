@@ -34,7 +34,7 @@ final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyCont
 	/**
 	 * Logger used by the generator to report progress and parse/write issues.
 	 */
-	static final Logger logger = Logger.getLogger(CollectDependenciesVisitor.class.getName());
+	private static final Logger logger = Logger.getLogger(CollectDependenciesVisitor.class.getName());
 
 	/**
 	 *
