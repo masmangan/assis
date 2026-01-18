@@ -25,7 +25,8 @@ import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
 
 import io.github.masmangan.assis.deps.CollectDependenciesVisitor;
 import io.github.masmangan.assis.deps.DependencyContext;
-import io.github.masmangan.assis.utils.SmartSourceRootManager;
+import io.github.masmangan.assis.io.PlantUMLWriter;
+import io.github.masmangan.assis.io.SmartSourceRootManager;
 
 /**
  * Generates a PlantUML class diagram from one or more Java source roots.
@@ -157,20 +158,22 @@ public class GenerateClassDiagram {
 	 * @throws NullPointerException if {@code out} or {@code idx} is {@code null}
 	 */
 	private static void writeDiagram(final Path out, final DeclaredIndex idx) {
+		// Order matters: emit types first so later relations can refer to them
+		// Stronger relations first, then dependencies
 		try (PlantUMLWriter pw = new PlantUMLWriter(
 				new PrintWriter(Files.newBufferedWriter(out, StandardCharsets.UTF_8)));) {
 			pw.beginDiagram("class-diagram");
 
-			writeHeader(pw);
+			writeHeader(pw);  
 
 			writeTypes(idx, pw);
 
 			pw.println();
 			pw.println();
 
-			writeStructuralRelations(idx, pw);
+			writeStructuralRelations(idx, pw);  
 
-			writeDependencies(idx, pw);
+			writeDependencies(idx, pw); 
 			pw.println();
 
 			pw.endDiagram("class-diagram");
