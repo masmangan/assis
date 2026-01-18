@@ -3,12 +3,13 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis;
+package io.github.masmangan.assis.internal;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.body.AnnotationDeclaration;
@@ -61,6 +62,8 @@ import io.github.masmangan.assis.io.PlantUMLWriter;
  * and name resolution.
  */
 class CollectTypesVisitor {
+
+	static final Logger logger = Logger.getLogger(CollectTypesVisitor.class.getName());
 
 	/**
 	 *
@@ -133,7 +136,7 @@ class CollectTypesVisitor {
 	 */
 	void emitType(String fqn, TypeDeclaration<?> td) {
 		String stereotypes = typeStereotypes(td);
-		String vis = GenerateClassDiagram.visibility(td);
+		String vis = DeclaredIndex.visibility(td);
 
 		pw.println();
 
@@ -209,7 +212,7 @@ class CollectTypesVisitor {
 			return;
 		}
 
-		GenerateClassDiagram.logger.log(Level.WARNING, () -> "Unexpected type: " + td);
+		logger.log(Level.WARNING, () -> "Unexpected type: " + td);
 	}
 
 	/**
@@ -218,7 +221,7 @@ class CollectTypesVisitor {
 	 * @return
 	 */
 	private static String typeStereotypes(TypeDeclaration<?> td) {
-		return GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(td));
+		return DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(td));
 	}
 
 	/**
@@ -246,7 +249,7 @@ class CollectTypesVisitor {
 					String defaultValue = amd.getDefaultValue().map(v -> " = " + v).orElse(EMPTY_STRING);
 
 					pw.println(name + "() : " + type + defaultValue
-							+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(amd)));
+							+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(amd)));
 				});
 	}
 
@@ -308,7 +311,7 @@ class CollectTypesVisitor {
 			}
 
 			pw.println(p.getNameAsString() + " : " + p.getType().asString()
-					+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p)));
+					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p)));
 		}
 	}
 
@@ -368,7 +371,7 @@ class CollectTypesVisitor {
 		String name = vd.getNameAsString();
 		String type = vd.getType().asString();
 		String staticPrefix = fd.isStatic() ? "{static}" : EMPTY_STRING;
-		String vis = GenerateClassDiagram.visibility(fd);
+		String vis = DeclaredIndex.visibility(fd);
 
 		List<String> mods = new ArrayList<>();
 		if (fd.isFinal()) {
@@ -382,8 +385,9 @@ class CollectTypesVisitor {
 		}
 		String modBlock = mods.isEmpty() ? EMPTY_STRING : " {" + String.join(", ", mods) + "}";
 
-		pw.println(vis + SPACE_STRING + staticPrefix + SPACE_STRING + name + " : " + type + modBlock
-				+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(fd)));
+		String sp = staticPrefix.isEmpty() ? "" : staticPrefix + SPACE_STRING;
+		pw.println(vis + SPACE_STRING + sp + name + " : " + type + modBlock
+				+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(fd)));
 	}
 
 	/**
@@ -405,9 +409,9 @@ class CollectTypesVisitor {
 			String name = c.getNameAsString();
 			String params = c.getParameters().stream().map(p -> p.getNameAsString() + " : " + p.getType().asString())
 					.collect(Collectors.joining(", "));
-			String vis = GenerateClassDiagram.visibility(c);
+			String vis = DeclaredIndex.visibility(c);
 			pw.println(vis + " <<create>> " + name + "(" + params + ")"
-					+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(c)));
+					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(c)));
 		}
 	}
 
@@ -462,14 +466,14 @@ class CollectTypesVisitor {
 			String returnType = m.getType().asString();
 			String name = m.getNameAsString();
 			String params = m.getParameters().stream().map(p -> {
-				String anns = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p));
+				String anns = DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
 				return (anns + SPACE_STRING + p.getNameAsString() + " : " + p.getType().asString()).trim();
 			}).collect(Collectors.joining(", "));
 			String flags = getFlags(m);
-			String vis = GenerateClassDiagram.visibility(m);
+			String vis = DeclaredIndex.visibility(m);
 
 			pw.println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags
-					+ GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(m)));
+					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(m)));
 		}
 	}
 

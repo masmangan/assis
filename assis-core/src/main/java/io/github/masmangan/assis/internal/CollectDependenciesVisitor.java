@@ -3,7 +3,7 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis.deps;
+package io.github.masmangan.assis.internal;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -29,7 +29,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 /**
  *
  */
-public final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyContext> {
+final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyContext> {
 
 	/**
 	 * Logger used by the generator to report progress and parse/write issues.

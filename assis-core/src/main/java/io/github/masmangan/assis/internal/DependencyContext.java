@@ -3,7 +3,7 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis.deps;
+package io.github.masmangan.assis.internal;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -16,18 +16,17 @@ import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
-import io.github.masmangan.assis.DeclaredIndex;
 import io.github.masmangan.assis.io.PlantUMLWriter;
 
 /**
  *
  */
-public class DependencyContext {
+class DependencyContext {
 
 	/**
 	 * Logger used by the generator to report progress and parse/write issues.
 	 */
-	static final Logger logger = Logger.getLogger(DependencyContext.class.getName());
+	private static final Logger logger = Logger.getLogger(DependencyContext.class.getName());
 
 	/**
 	 *
@@ -70,7 +69,7 @@ public class DependencyContext {
 		// FIXME: Symbol Solver here...
 
 		String simpleName = cit.getNameAsString();
-		TypeDeclaration<?> td = idx.byFqn.get(simpleName);
+		TypeDeclaration<?> td = idx.getByFqn(simpleName);
 		if (td == null) {
 			return Optional.of(new ExternalTypeRef(simpleName));
 		} else {

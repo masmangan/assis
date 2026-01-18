@@ -3,7 +3,7 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis;
+package io.github.masmangan.assis.internal;
 
 import java.util.Optional;
 import java.util.logging.Level;
@@ -108,12 +108,10 @@ class CollectRelationshipsVisitor {
 	 *
 	 */
 	private void emitAssociationRelations() {
-		for (var entry : idx.fqnsByPkg.entrySet()) {
-			String pkg = entry.getKey();
-			for (String fqn : entry.getValue()) {
-				TypeDeclaration<?> td = idx.byFqn.get(fqn);
-				emitAssociations(pkg, fqn, td);
-			}
+		for (var td : idx.typesInIndexOrder()) {
+			String pkg = DeclaredIndex.derivePkg(td);
+			String fqn = DeclaredIndex.deriveFqnDollar(td);
+			emitAssociations(pkg, fqn, td);
 		}
 	}
 
@@ -121,7 +119,7 @@ class CollectRelationshipsVisitor {
 	 *
 	 */
 	private void emitInnerClassRelations() {
-		for (String fqn : idx.byFqn.keySet()) {
+		for (String fqn : idx.fqnsInIndexOrder()) {
 			emitInnerTypes(fqn);
 		}
 	}
@@ -132,7 +130,7 @@ class CollectRelationshipsVisitor {
 	 */
 	private void emitInnerTypes(String fqn) {
 		String ownerFqn = ownerFqnOf(fqn);
-		if (ownerFqn != null && idx.byFqn.containsKey(ownerFqn)) {
+		if (ownerFqn != null && idx.containsFqn(ownerFqn)) {
 			pw.connectInnerType(ownerFqn, fqn);
 		}
 	}
@@ -141,12 +139,10 @@ class CollectRelationshipsVisitor {
 	 *
 	 */
 	private void emitInheritanceRelations() {
-		for (var entry : idx.fqnsByPkg.entrySet()) {
-			String pkg = entry.getKey();
-			for (String fqn : entry.getValue()) {
-				TypeDeclaration<?> td = idx.byFqn.get(fqn);
-				emitExtendsImplements(pkg, fqn, td);
-			}
+		for (var td : idx.typesInIndexOrder()) {
+			String pkg = DeclaredIndex.derivePkg(td);
+			String fqn = DeclaredIndex.deriveFqnDollar(td);
+			emitExtendsImplements(pkg, fqn, td);
 		}
 	}
 
@@ -181,7 +177,7 @@ class CollectRelationshipsVisitor {
 	private void emitImplements(String pkg, String subFqn, ClassOrInterfaceType impl) {
 		String nameWithScope = impl.getNameWithScope();
 
-		String raw = GenerateClassDiagram.simpleName(nameWithScope);
+		String raw = DeclaredIndex.simpleName(nameWithScope);
 		String target = idx.resolveTypeName(pkg, raw);
 		if (target != null) {
 			// emit active implements to a know type
@@ -200,7 +196,7 @@ class CollectRelationshipsVisitor {
 	 */
 	private void emitExtends(String pkg, String subFqn, ClassOrInterfaceType ext) {
 		String nameWithScope = ext.getNameWithScope();
-		String raw = GenerateClassDiagram.simpleName(nameWithScope);
+		String raw = DeclaredIndex.simpleName(nameWithScope);
 		String target = idx.resolveTypeName(pkg, raw);
 		if (target != null) {
 			// emit active extends to a know type
@@ -263,7 +259,7 @@ class CollectRelationshipsVisitor {
 	 * @return
 	 */
 	private String stereotypesToString(Parameter p) {
-		return GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p));
+		return DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
 	}
 
 	/**
@@ -273,7 +269,7 @@ class CollectRelationshipsVisitor {
 	 * @param fd
 	 */
 	private void emitFieldAssociation(String pkg, String ownerFqn, FieldDeclaration fd) {
-		String st = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(fd));
+		String st = DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(fd));
 		String target = null;
 
 		for (VariableDeclarator vd : fd.getVariables()) {

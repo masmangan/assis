@@ -3,10 +3,11 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  */
 
-package io.github.masmangan.assis;
+package io.github.masmangan.assis.internal;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -17,11 +18,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
+import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
 
 /**
  * Index of declared types (top-level and nested).
@@ -41,7 +45,7 @@ public class DeclaredIndex {
 	/**
 	 * FQN → declaration
 	 */
-	public final Map<String, TypeDeclaration<?>> byFqn = new LinkedHashMap<>();
+	private final Map<String, TypeDeclaration<?>> byFqn = new LinkedHashMap<>();
 
 	/**
 	 * FQN → declared package (from CompilationUnit)
@@ -51,7 +55,7 @@ public class DeclaredIndex {
 	/**
 	 * package → list of FQNs
 	 */
-	Map<String, List<String>> fqnsByPkg = new LinkedHashMap<>();
+	private Map<String, List<String>> fqnsByPkg = new LinkedHashMap<>();
 
 	/**
 	 * simple name → unique FQN (only when unambiguous)
@@ -59,13 +63,15 @@ public class DeclaredIndex {
 	 */
 	private final Map<String, String> uniqueBySimple = new LinkedHashMap<>();
 
+	private final Map<String, String> dollarByDotNested = new LinkedHashMap<>();
+
 	/**
 	 * Populates idx with declared types from compilation units.
 	 *
 	 * @param units
 	 * @return
 	 */
-	void fill(List<CompilationUnit> units) {
+	public void fill(List<CompilationUnit> units) {
 
 		for (CompilationUnit unit : units) {
 			for (TypeDeclaration<?> td : unit.getTypes()) {
@@ -86,7 +92,7 @@ public class DeclaredIndex {
 		Set<String> ambiguous = new LinkedHashSet<>();
 
 		for (String fqn : byFqn.keySet()) {
-			String simple = GenerateClassDiagram.simpleName(fqn);
+			String simple = DeclaredIndex.simpleName(fqn);
 			if (!seen.containsKey(simple)) {
 				seen.put(simple, fqn);
 			} else {
@@ -107,7 +113,58 @@ public class DeclaredIndex {
 
 	}
 
-	private final Map<String, String> dollarByDotNested = new LinkedHashMap<>();
+	// REFACTOR
+	public Iterable<String> fqnsInIndexOrder() {
+		return Collections.unmodifiableSet(byFqn.keySet());
+	}
+
+	public boolean containsFqn(String fqn) {
+		return byFqn.containsKey(fqn);
+	}
+
+	public TypeDeclaration<?> getByFqn(String fqn) {
+		return byFqn.get(fqn);
+	}
+
+	/**
+	 * Deterministic: package order, then FQN order inside each package. Read-only,
+	 * no lambdas needed at call sites (Writer + IOException friendly).
+	 */
+	public Iterable<TypeDeclaration<?>> typesInIndexOrder() {
+		List<TypeDeclaration<?>> out = new ArrayList<>();
+		for (var entry : fqnsByPkg.entrySet()) {
+			for (String fqn : entry.getValue()) {
+				TypeDeclaration<?> td = byFqn.get(fqn);
+				if (td != null) {
+					out.add(td);
+				}
+			}
+		}
+		return Collections.unmodifiableList(out);
+	}
+
+	/** Deterministic package iteration order (read-only). */
+	public Iterable<String> packagesInIndexOrder() {
+		return Collections.unmodifiableSet(fqnsByPkg.keySet());
+	}
+
+	/** Deterministic type order inside the package (read-only). */
+	public Iterable<TypeDeclaration<?>> typesInPackageOrder(String pkg) {
+		List<String> fqns = fqnsByPkg.get(pkg);
+		if (fqns == null || fqns.isEmpty()) {
+			return List.of();
+		}
+
+		List<TypeDeclaration<?>> out = new ArrayList<>(fqns.size());
+		for (String fqn : fqns) {
+			TypeDeclaration<?> td = byFqn.get(fqn);
+			if (td != null) {
+				out.add(td);
+			}
+		}
+		return Collections.unmodifiableList(out);
+	}
+	//
 
 	/**
 	 *
@@ -128,7 +185,7 @@ public class DeclaredIndex {
 			return raw;
 		}
 
-		String simple = GenerateClassDiagram.simpleName(raw);
+		String simple = DeclaredIndex.simpleName(raw);
 
 		String samePkg = (ownerPkg == null || ownerPkg.isEmpty()) ? simple : ownerPkg + PACKAGE_SEPARATOR + simple;
 
@@ -144,7 +201,7 @@ public class DeclaredIndex {
 	 * @param td
 	 * @return
 	 */
-	public static String deriveFqnDollar(TypeDeclaration<?> td) {
+	static String deriveFqnDollar(TypeDeclaration<?> td) {
 		String pkg = derivePkg(td);
 
 		// walk up TypeDeclaration parents to build nested chain
@@ -232,6 +289,100 @@ public class DeclaredIndex {
 	 */
 	static boolean isTopLevel(TypeDeclaration<?> td) {
 		return td.getParentNode().map(CompilationUnit.class::isInstance).orElse(false);
+	}
+
+	// Old GenerateClassDiagram helpers
+	//
+	/**
+	 * Converts a JavaParser access specifier to PlantUML visibility notation.
+	 *
+	 * <p>
+	 * Mapping:
+	 * <ul>
+	 * <li>{@code public} → {@code +}</li>
+	 * <li>{@code protected} → {@code #}</li>
+	 * <li>{@code private} → {@code -}</li>
+	 * <li>package-private → {@code ~}</li>
+	 * </ul>
+	 *
+	 * @param n node providing access modifiers; must not be {@code null}
+	 * @return PlantUML visibility character
+	 * @throws NullPointerException if {@code n} is {@code null}
+	 */
+	static String visibility(NodeWithAccessModifiers<?> n) {
+		AccessSpecifier a = n.getAccessSpecifier();
+		return switch (a) {
+		case PUBLIC -> "+";
+		case PROTECTED -> "#";
+		case PRIVATE -> "-";
+		default -> "~";
+		};
+	}
+
+	// Shared helpers for visitors and DeclaredIndex.
+
+	/**
+	 * Returns the stereotypes (annotation simple names) declared on a node.
+	 *
+	 * <p>
+	 * This method returns annotation identifiers only (simple names), not fully
+	 * qualified names.
+	 *
+	 * @param n annotated node; must not be {@code null}
+	 * @return list of annotation identifiers (possibly empty)
+	 * @throws NullPointerException if {@code n} is {@code null}
+	 */
+	static List<String> stereotypesOf(NodeWithAnnotations<?> n) {
+		return n.getAnnotations().stream().map(a -> a.getName().getIdentifier()).sorted().toList();
+	}
+
+	/**
+	 * Renders a list of stereotype names into PlantUML stereotype syntax.
+	 *
+	 * <p>
+	 * Example: {@code ["Entity","Deprecated"]} becomes
+	 * {@code " <<Entity>> <<Deprecated>>"}.
+	 *
+	 * @param ss stereotype names; may be {@code null} or empty
+	 * @return a leading-space-prefixed stereotype block, or {@code ""} when none
+	 */
+	static String renderStereotypes(List<String> ss) {
+		if (ss == null || ss.isEmpty()) {
+			return "";
+		}
+		return " " + ss.stream().map(s -> "<<" + s + ">>").collect(Collectors.joining(" "));
+	}
+
+	/**
+	 * Returns the simple name of a type name that may be package-qualified and/or
+	 * nested.
+	 *
+	 * <p>
+	 * This method strips:
+	 * <ul>
+	 * <li>package qualification using {@code '.'}</li>
+	 * <li>nesting qualification using {@code '$'}</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * Example: {@code "p.Outer$Inner"} becomes {@code "Inner"}.
+	 *
+	 * @param qname fully-qualified and/or nested type name; must not be
+	 *              {@code null}
+	 * @return the simple name component
+	 * @throws NullPointerException if {@code qname} is {@code null}
+	 */
+	static String simpleName(String qname) {
+		String s = qname;
+		int lt = s.lastIndexOf('.');
+		if (lt >= 0) {
+			s = s.substring(lt + 1);
+		}
+		lt = s.lastIndexOf('$');
+		if (lt >= 0) {
+			s = s.substring(lt + 1);
+		}
+		return s;
 	}
 
 }
