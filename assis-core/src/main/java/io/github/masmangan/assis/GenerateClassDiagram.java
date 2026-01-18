@@ -10,8 +10,6 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -19,21 +17,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import com.github.javaparser.ParseResult;
-import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.AccessSpecifier;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
-import com.github.javaparser.symbolsolver.JavaSymbolSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
-import com.github.javaparser.utils.SourceRoot;
 
 import io.github.masmangan.assis.deps.CollectDependenciesVisitor;
 import io.github.masmangan.assis.deps.DependencyContext;
+import io.github.masmangan.assis.utils.SmartSourceRootManager;
 
 /**
  * Generates a PlantUML class diagram from one or more Java source roots.
@@ -95,83 +87,22 @@ public class GenerateClassDiagram {
 	 *                              writing the output file
 	 */
 	public static void generate(final Set<Path> sourceRoots, final Path outDir) throws IOException {
-		Objects.requireNonNull(sourceRoots, "sourceRoots");
 		Objects.requireNonNull(outDir, "outDir");
-		Path dir = outDir.normalize();
 
+		List<CompilationUnit> units = SmartSourceRootManager.autoscan(sourceRoots);
+
+		DeclaredIndex index = new DeclaredIndex();
+		index.fill(units);
+
+		Path dir = outDir.normalize();
 		if (Files.exists(dir) && !Files.isDirectory(dir)) {
 			throw new IllegalArgumentException("outDir must be a directory: " + dir.toAbsolutePath());
 		}
-		DeclaredIndex index = new DeclaredIndex();
-		List<CompilationUnit> units = new ArrayList<>();
-
-		scanSourceRoots(sourceRoots, index, units);
-
-		logger.log(Level.FINE, () -> "**     byFqn    ** " + index.byFqn.toString());
-		logger.log(Level.FINE, () -> "**   fqnsByPkg  ** " + index.fqnsByPkg.toString());
-		logger.log(Level.FINE, () -> "**   pkgByFqn   ** " + index.pkgByFqn.toString());
-		logger.log(Level.FINE, () -> "**uniqueBySimple** " + index.uniqueBySimple.toString());
-
-		logger.log(Level.FINE, () -> "**    UNITS     **" + units.toString());
-
 		Files.createDirectories(dir);
 		Path outputFile = dir.resolve("class-diagram.puml");
 		logger.log(Level.INFO, () -> "Writing " + outputFile);
 
 		writeDiagram(outputFile, index);
-
-	}
-
-	/**
-	 * Scans directories on sourceRoots.
-	 *
-	 * <p>
-	 * Best effort scanning will discard invalid and proceed with a simple warning.
-	 * This behavior can scan a large mass of files even in the presence of partial
-	 * failure.
-	 *
-	 * @param sourceRoots one or more Java source roots; must not be {@code null}
-	 * @param index       index to be filled with compilation units scanned from
-	 *                    sources roots
-	 * @param units       list of compilation units scanned
-	 * @throws IOException if an I/O error occurs while reading sources
-	 */
-	private static void scanSourceRoots(final Set<Path> sourceRoots, final DeclaredIndex index,
-			final List<CompilationUnit> units) throws IOException {
-
-		logger.log(Level.INFO, () -> "Scanning started");
-
-		// Sorting files by path
-		List<Path> roots = sourceRoots.stream().sorted(Path::compareTo).toList();
-
-		for (Path src : roots) {
-
-			logger.log(Level.INFO, () -> "Scanning " + src);
-
-			if (!Files.exists(src)) {
-				logger.log(Level.WARNING, () -> "@assis:bogus-src: Source folder does not exist: " + src);
-				continue;
-			}
-			CombinedTypeSolver ts = new CombinedTypeSolver();
-			ts.add(new JavaParserTypeSolver(src));
-			JavaSymbolSolver jss = new JavaSymbolSolver(ts);
-			ParserConfiguration cfg = new ParserConfiguration()
-					.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_17).setSymbolResolver(jss);
-			SourceRoot root = new SourceRoot(src);
-			//
-			root.setParserConfiguration(cfg);
-			List<ParseResult<CompilationUnit>> results = root.tryToParse("");
-
-			for (ParseResult<CompilationUnit> r : results) {
-				r.getResult().ifPresent(units::add);
-			}
-
-		}
-
-		units.sort(Comparator.comparing(unit -> unit.getStorage().map(s -> s.getPath().toString()).orElse("")));
-
-		DeclaredIndex.fill(index, units);
-
 	}
 
 	/**
@@ -188,7 +119,7 @@ public class GenerateClassDiagram {
 	 * @param pw writer to receive directives; must not be {@code null}
 	 * @throws NullPointerException if {@code pw} is {@code null}
 	 */
-	private static void addHeader(final PlantUMLWriter pw) {
+	private static void writeHeader(final PlantUMLWriter pw) {
 		pw.println();
 		pw.println("mainframe class diagram (cd)");
 		pw.println();
@@ -230,7 +161,7 @@ public class GenerateClassDiagram {
 				new PrintWriter(Files.newBufferedWriter(out, StandardCharsets.UTF_8)));) {
 			pw.beginDiagram("class-diagram");
 
-			addHeader(pw);
+			writeHeader(pw);
 
 			writeTypes(idx, pw);
 
@@ -387,38 +318,6 @@ public class GenerateClassDiagram {
 			return "";
 		}
 		return " " + ss.stream().map(s -> "<<" + s + ">>").collect(Collectors.joining(" "));
-	}
-
-	/**
-	 * Returns PlantUML method flags derived from Java modifiers.
-	 *
-	 * <p>
-	 * Current flags:
-	 * <ul>
-	 * <li>{@code {static}}</li>
-	 * <li>{@code {abstract}}</li>
-	 * <li>{@code {final}}</li>
-	 * </ul>
-	 *
-	 * @param method method declaration; must not be {@code null}
-	 * @return flags string (possibly empty)
-	 * @throws NullPointerException if {@code method} is {@code null}
-	 */
-	static String getFlags(MethodDeclaration method) {
-		String flags = "";
-
-		if (method.isStatic()) {
-			flags += " {static}";
-		}
-
-		if (method.isAbstract()) {
-			flags += " {abstract}";
-		}
-
-		if (method.isFinal()) {
-			flags += " {final}";
-		}
-		return flags;
 	}
 
 	/**

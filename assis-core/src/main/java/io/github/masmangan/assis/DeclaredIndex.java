@@ -65,28 +65,28 @@ public class DeclaredIndex {
 	 * @param units
 	 * @return
 	 */
-	static void fill(DeclaredIndex idx, List<CompilationUnit> units) {
+	void fill(List<CompilationUnit> units) {
 
 		for (CompilationUnit unit : units) {
 
 			for (TypeDeclaration<?> td : unit.getTypes()) {
-				collectTypeRecursive(idx, unit, td, null, PACKAGE_SEPARATOR);
+				collectTypeRecursive(unit, td, null, PACKAGE_SEPARATOR);
 			}
 		}
 
-		for (Map.Entry<String, String> e : idx.pkgByFqn.entrySet()) {
+		for (Map.Entry<String, String> e : pkgByFqn.entrySet()) {
 			String fqn = e.getKey();
 			String pkg = e.getValue();
-			idx.fqnsByPkg.computeIfAbsent(pkg, k -> new ArrayList<>()).add(fqn);
+			fqnsByPkg.computeIfAbsent(pkg, k -> new ArrayList<>()).add(fqn);
 		}
 
-		idx.fqnsByPkg = sortPackagesByNameFqn(idx.fqnsByPkg);
-		idx.fqnsByPkg.values().forEach(list -> list.sort(String::compareTo));
+		fqnsByPkg = sortPackagesByNameFqn(fqnsByPkg);
+		fqnsByPkg.values().forEach(list -> list.sort(String::compareTo));
 
 		Map<String, String> seen = new LinkedHashMap<>();
 		Set<String> ambiguous = new LinkedHashSet<>();
 
-		for (String fqn : idx.byFqn.keySet()) {
+		for (String fqn : byFqn.keySet()) {
 			String simple = GenerateClassDiagram.simpleName(fqn);
 			if (!seen.containsKey(simple)) {
 				seen.put(simple, fqn);
@@ -97,13 +97,13 @@ public class DeclaredIndex {
 
 		for (var e : seen.entrySet()) {
 			if (!ambiguous.contains(e.getKey())) {
-				idx.uniqueBySimple.put(e.getKey(), e.getValue());
+				uniqueBySimple.put(e.getKey(), e.getValue());
 			}
 		}
 
-		for (String fqnDollar : idx.byFqn.keySet()) {
+		for (String fqnDollar : byFqn.keySet()) {
 			String alias = fqnDollar.replace('$', '.'); // ONLY $ -> .
-			idx.dollarByDotNested.put(alias, fqnDollar);
+			dollarByDotNested.put(alias, fqnDollar);
 		}
 
 	}
@@ -180,8 +180,7 @@ public class DeclaredIndex {
 	 * @param ownerFqn
 	 * @param separator
 	 */
-	private static void collectTypeRecursive(DeclaredIndex idx, CompilationUnit unit, TypeDeclaration<?> td,
-			String ownerFqn, String separator) {
+	private void collectTypeRecursive(CompilationUnit unit, TypeDeclaration<?> td, String ownerFqn, String separator) {
 		String name = td.getNameAsString();
 		String fqn;
 		String pkg = unit.getPackageDeclaration().map(pd -> pd.getNameAsString()).orElse("");
@@ -191,7 +190,7 @@ public class DeclaredIndex {
 		} else {
 			fqn = ownerFqn + separator + name;
 		}
-		if (idx.byFqn.containsKey(fqn)) {
+		if (byFqn.containsKey(fqn)) {
 			logger.log(Level.WARNING, () -> "Attempt to redefine " + fqn);
 			logger.log(Level.WARNING, unit::toString);
 			logger.log(Level.WARNING, td::toString);
@@ -199,19 +198,19 @@ public class DeclaredIndex {
 			return;
 		}
 
-		idx.byFqn.put(fqn, td);
-		idx.pkgByFqn.put(fqn, pkg);
+		byFqn.put(fqn, td);
+		pkgByFqn.put(fqn, pkg);
 
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
 			cid.getMembers().forEach(m -> {
 				if (m instanceof TypeDeclaration<?> nested) {
-					collectTypeRecursive(idx, unit, nested, fqn, "$");
+					collectTypeRecursive(unit, nested, fqn, "$");
 				}
 			});
 		} else if (td instanceof EnumDeclaration ed) {
 			ed.getMembers().forEach(m -> {
 				if (m instanceof TypeDeclaration<?> nested) {
-					collectTypeRecursive(idx, unit, nested, fqn, "$");
+					collectTypeRecursive(unit, nested, fqn, "$");
 				}
 			});
 		}

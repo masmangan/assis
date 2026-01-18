@@ -410,6 +410,38 @@ class CollectTypesVisitor {
 	}
 
 	/**
+	 * Returns PlantUML method flags derived from Java modifiers.
+	 *
+	 * <p>
+	 * Current flags:
+	 * <ul>
+	 * <li>{@code {static}}</li>
+	 * <li>{@code {abstract}}</li>
+	 * <li>{@code {final}}</li>
+	 * </ul>
+	 *
+	 * @param method method declaration; must not be {@code null}
+	 * @return flags string (possibly empty)
+	 * @throws NullPointerException if {@code method} is {@code null}
+	 */
+	private static String getFlags(MethodDeclaration method) {
+		String flags = "";
+
+		if (method.isStatic()) {
+			flags += " {static}";
+		}
+
+		if (method.isAbstract()) {
+			flags += " {abstract}";
+		}
+
+		if (method.isFinal()) {
+			flags += " {final}";
+		}
+		return flags;
+	}
+
+	/**
 	 * Emits methods as PlantUML operation lines.
 	 *
 	 * <p>
@@ -431,7 +463,7 @@ class CollectTypesVisitor {
 				String anns = GenerateClassDiagram.renderStereotypes(GenerateClassDiagram.stereotypesOf(p));
 				return (anns + SPACE_STRING + p.getNameAsString() + " : " + p.getType().asString()).trim();
 			}).collect(Collectors.joining(", "));
-			String flags = GenerateClassDiagram.getFlags(m);
+			String flags = getFlags(m);
 			String vis = GenerateClassDiagram.visibility(m);
 
 			pw.println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags
