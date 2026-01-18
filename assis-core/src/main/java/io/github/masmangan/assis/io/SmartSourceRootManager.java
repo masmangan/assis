@@ -56,7 +56,7 @@ public class SmartSourceRootManager {
 	 * @throws IOException if an I/O error occurs while scanning or parsing
 	 */
 	public static List<CompilationUnit> autoscan(Set<Path> sourceRoots) throws IOException {
-		checkSourceRoot(sourceRoots);
+		checkSourceRoots(sourceRoots);
 
 		List<CompilationUnit> units = new ArrayList<>();
 
@@ -135,7 +135,7 @@ public class SmartSourceRootManager {
 		return roots;
 	}
 
-	private static void checkSourceRoot(Set<Path> sourceRoots) {
+	private static void checkSourceRoots(Set<Path> sourceRoots) {
 		Objects.requireNonNull(sourceRoots, "sourceRoots");
 		if (sourceRoots.isEmpty()) {
 			throw new IllegalArgumentException("sourceRoots is empty.");
