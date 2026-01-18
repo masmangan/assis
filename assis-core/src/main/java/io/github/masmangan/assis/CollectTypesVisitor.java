@@ -24,6 +24,8 @@ import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 
+import io.github.masmangan.assis.io.PlantUMLWriter;
+
 /**
  * Emits PlantUML type blocks (classes, interfaces, records, enums, annotations)
  * for a set of declared Java types.

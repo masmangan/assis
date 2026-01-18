@@ -17,7 +17,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 
 import io.github.masmangan.assis.DeclaredIndex;
-import io.github.masmangan.assis.PlantUMLWriter;
+import io.github.masmangan.assis.io.PlantUMLWriter;
 
 /**
  *

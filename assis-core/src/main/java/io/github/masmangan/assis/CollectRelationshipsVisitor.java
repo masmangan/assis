@@ -22,6 +22,8 @@ import com.github.javaparser.resolution.UnsolvedSymbolException;
 import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 
+import io.github.masmangan.assis.io.PlantUMLWriter;
+
 /**
  * Emits PlantUML relationship edges for all declared types in a
  * {@link DeclaredIndex}.
