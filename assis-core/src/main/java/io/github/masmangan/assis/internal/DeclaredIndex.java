@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,9 +24,15 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.resolution.UnsolvedSymbolException;
+import com.github.javaparser.resolution.types.ResolvedReferenceType;
+import com.github.javaparser.resolution.types.ResolvedType;
 
 /**
  * Index of declared types (top-level and nested).
@@ -36,6 +43,11 @@ public class DeclaredIndex {
 	 * Logger used by index to warn about type redefinition.
 	 */
 	private static final Logger logger = Logger.getLogger(DeclaredIndex.class.getName());
+
+	/**
+	 *
+	 */
+	private static final String EMPTY_STRING = "";
 
 	/**
 	 *
@@ -64,6 +76,16 @@ public class DeclaredIndex {
 	private final Map<String, String> uniqueBySimple = new LinkedHashMap<>();
 
 	private final Map<String, String> dollarByDotNested = new LinkedHashMap<>();
+
+	/**
+	 *
+	 */
+	private static final char CHAR_INNER_TYPE_SEPARATOR = '$';
+
+	/**
+	 *
+	 */
+	private static final char CHAR_PACKAGE_SEPARATOR = '.';
 
 	/**
 	 * Populates idx with declared types from compilation units.
@@ -273,6 +295,124 @@ public class DeclaredIndex {
 	}
 
 	/**
+	 * Extracts a "raw" type name for association/name-resolution heuristics.
+	 *
+	 * <p>
+	 * This method removes:
+	 * <ul>
+	 * <li>generic arguments (e.g., {@code List<Foo>} → {@code List})</li>
+	 * <li>array brackets (e.g., {@code Foo[]} → {@code Foo})</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * It is a string-based heuristic used to decide whether a member likely refers
+	 * to another declared type.
+	 *
+	 * @param typeAsString JavaParser type string; must not be {@code null}
+	 * @return simplified type name
+	 * @throws NullPointerException if {@code typeAsString} is {@code null}
+	 */
+	static String rawTypeName(String typeAsString) {
+		return typeAsString.replaceAll("<[^>]*>", EMPTY_STRING).replace("[]", EMPTY_STRING).trim();
+	}
+
+	static Optional<String> debugResolve(Type type) {
+		try {
+			if (!(type instanceof ClassOrInterfaceType cit)) {
+				logger.fine(() -> "Skip non-reference type: " + type);
+				return Optional.empty();
+			}
+
+			ResolvedType rt = cit.resolve();
+			logger.info(() -> "Resolved '" + cit + "' -> " + rt.describe());
+
+			if (!rt.isReferenceType()) {
+				logger.fine(() -> "Not a reference type: " + rt);
+				return Optional.empty();
+			}
+
+			ResolvedReferenceType rrt = rt.asReferenceType();
+			String qname = rrt.getQualifiedName(); // dot form
+			logger.info(() -> "Qualified name: " + qname);
+
+			return Optional.of(qname);
+
+		} catch (UnsolvedSymbolException e) {
+			logger.info(() -> "Unsolved symbol: " + e.getName());
+			return Optional.empty();
+
+		} catch (IllegalStateException e) {
+			logger.info(() -> "SymbolSolver not configured at node");
+			return Optional.empty();
+
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "Unexpected resolution error", e);
+			return Optional.empty();
+		}
+	}
+
+	/**
+	 * Returns the immediate lexical owner FQN for a nested type name.
+	 *
+	 * <p>
+	 * Examples:
+	 * <ul>
+	 * <li>{@code "p.Outer$Inner"} -> {@code "p.Outer"}</li>
+	 * <li>{@code "p.A$B$C"} -> {@code "p.A$B"}</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * This method uses the last {@code '$'} to support multi-level nesting.
+	 *
+	 * @param fqn fully qualified name (may include {@code '$'} for nesting)
+	 * @return owner FQN, or {@code null} when the type is top-level
+	 */
+	static String ownerFqnOf(String fqn) {
+		int lastDot = fqn.lastIndexOf(CHAR_PACKAGE_SEPARATOR);
+		int lastDollar = fqn.lastIndexOf(CHAR_INNER_TYPE_SEPARATOR);
+		if (lastDot < 0 && lastDollar < 0) {
+			return null;
+		}
+		return fqn.substring(0, Math.max(lastDot, lastDollar));
+	}
+
+	/**
+	 *
+	 * @param type
+	 * @return
+	 */
+	private static Type peelArrays(Type type) {
+		Type t = type;
+		while (t.isArrayType()) {
+			t = t.asArrayType().getComponentType();
+		}
+		return t;
+	}
+
+	/**
+	 *
+	 * @param type
+	 * @return
+	 */
+	static String rawNameOf(Type type) {
+		Type t = peelArrays(type);
+
+		if (t.isClassOrInterfaceType()) {
+			return t.asClassOrInterfaceType().getNameWithScope();
+		}
+		return t.asString();
+	}
+
+	/**
+	 *
+	 * @param p
+	 * @return
+	 */
+	static String stereotypesToString(Parameter p) {
+		return DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
+	}
+
+	/**
 	 *
 	 * @param byPkg
 	 * @return
@@ -383,6 +523,29 @@ public class DeclaredIndex {
 			s = s.substring(lt + 1);
 		}
 		return s;
+	}
+
+	/**
+	 *
+	 * @param pkg
+	 * @param ownerFqn
+	 * @param type
+	 * @return
+	 */
+	String resolveAssocTarget(String pkg, String ownerFqn, Type type) {
+		// FIXME: solving type
+		logger.log(Level.INFO, () -> "Type: " + type.toString());
+		Optional<String> op = DeclaredIndex.debugResolve(type);
+
+		logger.log(Level.INFO, () -> "Name: " + op.orElse("NOPE"));
+
+		//
+		String raw = DeclaredIndex.rawNameOf(type);
+		String target = resolveTypeName(pkg, raw);
+		if (target == null || target.equals(ownerFqn)) {
+			return null;
+		}
+		return target;
 	}
 
 }

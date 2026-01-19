@@ -266,28 +266,6 @@ class CollectTypesVisitor {
 	}
 
 	/**
-	 * Extracts a "raw" type name for association/name-resolution heuristics.
-	 *
-	 * <p>
-	 * This method removes:
-	 * <ul>
-	 * <li>generic arguments (e.g., {@code List<Foo>} → {@code List})</li>
-	 * <li>array brackets (e.g., {@code Foo[]} → {@code Foo})</li>
-	 * </ul>
-	 *
-	 * <p>
-	 * It is a string-based heuristic used to decide whether a member likely refers
-	 * to another declared type.
-	 *
-	 * @param typeAsString JavaParser type string; must not be {@code null}
-	 * @return simplified type name
-	 * @throws NullPointerException if {@code typeAsString} is {@code null}
-	 */
-	private static String rawTypeName(String typeAsString) {
-		return typeAsString.replaceAll("<[^>]*>", EMPTY_STRING).replace("[]", EMPTY_STRING).trim();
-	}
-
-	/**
 	 * Emits record components as lines inside the record block.
 	 *
 	 * <p>
@@ -302,7 +280,7 @@ class CollectTypesVisitor {
 	 */
 	private void emitRecordComponents(String ownerFqn, RecordDeclaration rd) {
 		for (Parameter p : rd.getParameters()) {
-			String raw = rawTypeName(p.getType().asString());
+			String raw = DeclaredIndex.rawTypeName(p.getType().asString());
 			String target = idx.resolveTypeName(pkg, raw);
 
 			boolean becomesAssociation = target != null && !target.equals(ownerFqn);
@@ -494,7 +472,7 @@ class CollectTypesVisitor {
 	 *                              {@code null}
 	 */
 	private String assocTypeFrom(String ownerFqn, VariableDeclarator vd) {
-		String raw = rawTypeName(vd.getType().asString());
+		String raw = DeclaredIndex.rawTypeName(vd.getType().asString());
 		String resolved = idx.resolveTypeName(pkg, raw);
 		if ((resolved == null) || resolved.equals(ownerFqn)) {
 			return null;

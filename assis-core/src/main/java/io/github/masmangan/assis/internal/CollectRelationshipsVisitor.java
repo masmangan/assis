@@ -5,7 +5,6 @@
 
 package io.github.masmangan.assis.internal;
 
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,9 +16,7 @@ import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
-import com.github.javaparser.resolution.types.ResolvedReferenceType;
 import com.github.javaparser.resolution.types.ResolvedType;
 
 import io.github.masmangan.assis.io.PlantUMLWriter;
@@ -55,16 +52,6 @@ class CollectRelationshipsVisitor {
 	 * Logger used by the generator to report progress and parse/write issues.
 	 */
 	private static final Logger logger = Logger.getLogger(CollectRelationshipsVisitor.class.getName());
-
-	/**
-	 *
-	 */
-	private static final char CHAR_INNER_TYPE_SEPARATOR = '$';
-
-	/**
-	 *
-	 */
-	private static final char CHAR_PACKAGE_SEPARATOR = '.';
 
 	/**
 	 *
@@ -129,7 +116,7 @@ class CollectRelationshipsVisitor {
 	 * @param fqn
 	 */
 	private void emitInnerTypes(String fqn) {
-		String ownerFqn = ownerFqnOf(fqn);
+		String ownerFqn = DeclaredIndex.ownerFqnOf(fqn);
 		if (ownerFqn != null && idx.containsFqn(ownerFqn)) {
 			pw.connectInnerType(ownerFqn, fqn);
 		}
@@ -245,21 +232,12 @@ class CollectRelationshipsVisitor {
 	 * @param p
 	 */
 	private void emitRecordParameterAssociation(String pkg, String ownerFqn, Parameter p) {
-		String target = resolveAssocTarget(pkg, ownerFqn, p.getType());
+		String target = idx.resolveAssocTarget(pkg, ownerFqn, p.getType());
 		if (target != null) {
-			String st = stereotypesToString(p);
+			String st = DeclaredIndex.stereotypesToString(p);
 
 			emitAssociation(ownerFqn, target, p.getNameAsString(), st);
 		}
-	}
-
-	/**
-	 *
-	 * @param p
-	 * @return
-	 */
-	private static String stereotypesToString(Parameter p) {
-		return DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
 	}
 
 	/**
@@ -289,7 +267,7 @@ class CollectRelationshipsVisitor {
 					logger.log(Level.INFO, () -> "UNSOLVED: " + e.getName());
 				}
 			} else {
-				target = resolveAssocTarget(pkg, ownerFqn, vd.getType());
+				target = idx.resolveAssocTarget(pkg, ownerFqn, vd.getType());
 
 			}
 			//
@@ -297,116 +275,6 @@ class CollectRelationshipsVisitor {
 				emitAssociation(ownerFqn, target, vd.getNameAsString(), st);
 			}
 		}
-	}
-
-	/**
-	 * Returns the immediate lexical owner FQN for a nested type name.
-	 *
-	 * <p>
-	 * Examples:
-	 * <ul>
-	 * <li>{@code "p.Outer$Inner"} -> {@code "p.Outer"}</li>
-	 * <li>{@code "p.A$B$C"} -> {@code "p.A$B"}</li>
-	 * </ul>
-	 *
-	 * <p>
-	 * This method uses the last {@code '$'} to support multi-level nesting.
-	 *
-	 * @param fqn fully qualified name (may include {@code '$'} for nesting)
-	 * @return owner FQN, or {@code null} when the type is top-level
-	 */
-	private static String ownerFqnOf(String fqn) {
-		int lastDot = fqn.lastIndexOf(CHAR_PACKAGE_SEPARATOR);
-		int lastDollar = fqn.lastIndexOf(CHAR_INNER_TYPE_SEPARATOR);
-		if (lastDot < 0 && lastDollar < 0) {
-			return null;
-		}
-		return fqn.substring(0, Math.max(lastDot, lastDollar));
-	}
-
-	/**
-	 *
-	 * @param type
-	 * @return
-	 */
-	private static Type peelArrays(Type type) {
-		Type t = type;
-		while (t.isArrayType()) {
-			t = t.asArrayType().getComponentType();
-		}
-		return t;
-	}
-
-	/**
-	 *
-	 * @param type
-	 * @return
-	 */
-	private static String rawNameOf(Type type) {
-		Type t = peelArrays(type);
-
-		if (t.isClassOrInterfaceType()) {
-			return t.asClassOrInterfaceType().getNameWithScope();
-		}
-		return t.asString();
-	}
-
-	private static Optional<String> debugResolve(Type type) {
-		try {
-			if (!(type instanceof ClassOrInterfaceType cit)) {
-				logger.fine(() -> "Skip non-reference type: " + type);
-				return Optional.empty();
-			}
-
-			ResolvedType rt = cit.resolve();
-			logger.info(() -> "Resolved '" + cit + "' -> " + rt.describe());
-
-			if (!rt.isReferenceType()) {
-				logger.fine(() -> "Not a reference type: " + rt);
-				return Optional.empty();
-			}
-
-			ResolvedReferenceType rrt = rt.asReferenceType();
-			String qname = rrt.getQualifiedName(); // dot form
-			logger.info(() -> "Qualified name: " + qname);
-
-			return Optional.of(qname);
-
-		} catch (UnsolvedSymbolException e) {
-			logger.info(() -> "Unsolved symbol: " + e.getName());
-			return Optional.empty();
-
-		} catch (IllegalStateException e) {
-			logger.info(() -> "SymbolSolver not configured at node");
-			return Optional.empty();
-
-		} catch (Exception e) {
-			logger.log(Level.WARNING, "Unexpected resolution error", e);
-			return Optional.empty();
-		}
-	}
-
-	/**
-	 *
-	 * @param pkg
-	 * @param ownerFqn
-	 * @param type
-	 * @return
-	 */
-	private String resolveAssocTarget(String pkg, String ownerFqn, Type type) {
-		// FIXME: solving type
-		logger.log(Level.INFO, () -> "Type: " + type.toString());
-		Optional<String> op = debugResolve(type);
-
-		logger.log(Level.INFO, () -> "Name: " + op.orElse("NOPE"));
-
-		//
-		String raw = rawNameOf(type);
-		String target = idx.resolveTypeName(pkg, raw);
-		if (target == null || target.equals(ownerFqn)) {
-			return null;
-		}
-		return target;
 	}
 
 }
