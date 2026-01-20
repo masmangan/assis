@@ -160,20 +160,23 @@ public final class PlantUMLWriter implements AutoCloseable {
 	 * @throws NullPointerException if {@code line} is {@code null}
 	 */
 	public void println(final String line) {
-		if (activeTag != null) {
-			printlnInternal("/' " + activeTag + EMPTY_STRING + line + " '/");
-		} else {
-			printlnInternal(line);
-		}
-	}
-
-	/**
-	 *
-	 * @param line
-	 */
-	private void printlnInternal(final String line) {
 		Objects.requireNonNull(line, "line");
-		out.println(INDENT_UNIT.repeat(indentLevel) + line);
+		out.print(INDENT_UNIT.repeat(indentLevel));
+
+		if (activeTag != null) {
+			out.print("/'");
+			out.print(SPACE_STRING);
+			out.print(activeTag);
+			out.print(SPACE_STRING);
+		}
+
+		out.print(line);
+
+		if (activeTag != null) {
+			out.print(SPACE_STRING);
+			out.print("'/");
+		}
+		out.println();
 	}
 
 	/**
@@ -762,6 +765,32 @@ public final class PlantUMLWriter implements AutoCloseable {
 			return "";
 		}
 		return prefix + s;
+	}
+
+	public void addEnumConstant(String name) {
+		checkName(name);
+		println(name);
+	}
+
+	public void addField(String vis, String sp, String name, String type, String modBlock, String renderStereotypes) {
+		println(vis + SPACE_STRING + sp + name + " : " + type + modBlock + renderStereotypes);
+	}
+
+	public void addMethod(String vis, String name, String params, String returnType, String flags,
+			String renderStereotypes) {
+		println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags + renderStereotypes);
+	}
+
+	public void addConstructor(String vis, String name, String params, String renderStereotypes) {
+		println(vis + " <<create>> " + name + "(" + params + ")" + renderStereotypes);
+	}
+
+	public void addRecordComponent(String nameAsString, String type, String renderStereotypes) {
+		println(nameAsString + " : " + type + renderStereotypes);
+	}
+
+	public void addAnnotationMember(String name, String type, String defaultValue, String renderStereotypes) {
+		println(name + "() : " + type + defaultValue + renderStereotypes);
 	}
 
 }

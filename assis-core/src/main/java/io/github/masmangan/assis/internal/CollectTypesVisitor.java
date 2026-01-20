@@ -134,63 +134,31 @@ class CollectTypesVisitor {
 	 * @param td  JavaParser type declaration; must not be {@code null}
 	 * @throws NullPointerException if {@code fqn} or {@code td} is {@code null}
 	 */
-	void emitType(String fqn, TypeDeclaration<?> td) {
+	void emitType(final TypeDeclaration<?> td) {
+		String fqn = DeclaredIndex.deriveFqnDollar(td);
+
 		String stereotypes = typeStereotypes(td);
 		String vis = DeclaredIndex.visibility(td);
 
 		pw.println();
 
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
-			if (cid.isInterface()) {
-				pw.beginInterface(fqn, vis, stereotypes);
-				emitFields(fqn, cid.getFields());
-				emitConstructors(cid.getConstructors());
-				emitMethods(cid.getMethods());
-
-				pw.endInterface(fqn);
-			} else if (cid.isAbstract()) {
-				pw.beginAbstractClass(fqn, vis, stereotypes);
-				emitFields(fqn, cid.getFields());
-				emitConstructors(cid.getConstructors());
-				emitMethods(cid.getMethods());
-
-				pw.endAbstractClass(fqn);
-			} else if (cid.isFinal()) {
-				pw.beginClass(fqn, vis, finalClassStereotypes(td));
-				emitFields(fqn, cid.getFields());
-				emitConstructors(cid.getConstructors());
-				emitMethods(cid.getMethods());
-
-				pw.endClass(fqn);
-			} else {
-				pw.beginClass(fqn, vis, stereotypes);
-				emitFields(fqn, cid.getFields());
-				emitConstructors(cid.getConstructors());
-				emitMethods(cid.getMethods());
-
-				pw.endClass(fqn);
-			}
-
+			emitClassOrInterface(cid);
 			return;
 		}
 
 		if (td instanceof RecordDeclaration rd) {
 			pw.beginRecord(fqn, vis, stereotypes);
-
 			emitRecordComponents(fqn, rd);
-
 			var componentNames = rd.getParameters().stream().map(p -> p.getNameAsString())
 					.collect(java.util.stream.Collectors.toSet());
 
 			var extraFields = rd.getFields().stream().filter(
 					fd -> fd.getVariables().stream().noneMatch(vd -> componentNames.contains(vd.getNameAsString())))
 					.toList();
-
-			emitFields(fqn, extraFields);
-
+			emitFields(td, extraFields);
 			emitConstructors(rd.getConstructors());
 			emitMethods(rd.getMethods());
-
 			pw.endRecord(fqn);
 			return;
 		}
@@ -198,7 +166,7 @@ class CollectTypesVisitor {
 		if (td instanceof EnumDeclaration ed) {
 			pw.beginEnum(fqn, vis, stereotypes);
 			emitEnumConstants(ed);
-			emitFields(fqn, ed.getFields());
+			emitFields(td, ed.getFields());
 			emitConstructors(ed.getConstructors());
 			emitMethods(ed.getMethods());
 			pw.endEnum(fqn);
@@ -213,6 +181,36 @@ class CollectTypesVisitor {
 		}
 
 		logger.log(Level.WARNING, () -> "Unexpected type: " + td);
+	}
+
+	private void emitClassOrInterface(final ClassOrInterfaceDeclaration cid) {
+		String fqn = DeclaredIndex.deriveFqnDollar(cid);
+
+		String stereotypes = typeStereotypes(cid);
+		String vis = DeclaredIndex.visibility(cid);
+		if (cid.isInterface()) {
+			pw.beginInterface(fqn, vis, stereotypes);
+			emitClassOrInterfaceBody(cid);
+			pw.endInterface(fqn);
+		} else if (cid.isAbstract()) {
+			pw.beginAbstractClass(fqn, vis, stereotypes);
+			emitClassOrInterfaceBody(cid);
+			pw.endAbstractClass(fqn);
+		} else if (cid.isFinal()) {
+			pw.beginClass(fqn, vis, finalClassStereotypes(cid));
+			emitClassOrInterfaceBody(cid);
+			pw.endClass(fqn);
+		} else {
+			pw.beginClass(fqn, vis, stereotypes);
+			emitClassOrInterfaceBody(cid);
+			pw.endClass(fqn);
+		}
+	}
+
+	private void emitClassOrInterfaceBody(final ClassOrInterfaceDeclaration cid) {
+		emitFields(cid, cid.getFields());
+		emitConstructors(cid.getConstructors());
+		emitMethods(cid.getMethods());
 	}
 
 	/**
@@ -248,8 +246,8 @@ class CollectTypesVisitor {
 
 					String defaultValue = amd.getDefaultValue().map(v -> " = " + v).orElse(EMPTY_STRING);
 
-					pw.println(name + "() : " + type + defaultValue
-							+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(amd)));
+					pw.addAnnotationMember(name, type, defaultValue,
+							DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(amd)));
 				});
 	}
 
@@ -261,7 +259,7 @@ class CollectTypesVisitor {
 	 */
 	private void emitEnumConstants(EnumDeclaration ed) {
 		for (EnumConstantDeclaration c : ed.getEntries()) {
-			pw.println(c.getNameAsString());
+			pw.addEnumConstant(c.getNameAsString());
 		}
 	}
 
@@ -288,8 +286,9 @@ class CollectTypesVisitor {
 				continue;
 			}
 
-			pw.println(p.getNameAsString() + " : " + p.getType().asString()
-					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p)));
+			pw.addRecordComponent(p.getNameAsString(), p.getType().asString(),
+					DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p)));
+
 		}
 	}
 
@@ -304,13 +303,13 @@ class CollectTypesVisitor {
 	 * Fields whose type resolves to another declared type are suppressed here so
 	 * that associations can be rendered separately.
 	 *
-	 * @param ownerFqn fully-qualified name of the owning type; must not be
-	 *                 {@code null}
-	 * @param fields   field declarations; must not be {@code null}
+	 * @param td
+	 *
+	 * @param fields field declarations; must not be {@code null}
 	 * @throws NullPointerException if {@code ownerFqn} or {@code fields} is
 	 *                              {@code null}
 	 */
-	private void emitFields(String ownerFqn, List<FieldDeclaration> fields) {
+	private void emitFields(TypeDeclaration<?> td, List<FieldDeclaration> fields) {
 
 		List<FieldDeclaration> sorted = new ArrayList<>(fields);
 		sorted.sort((a, b) -> {
@@ -321,7 +320,7 @@ class CollectTypesVisitor {
 
 		for (FieldDeclaration fd : sorted) {
 			for (VariableDeclarator vd : fd.getVariables()) {
-				emitVariableDeclarator(ownerFqn, fd, vd);
+				emitVariableDeclarator(td, fd, vd);
 			}
 		}
 	}
@@ -333,15 +332,19 @@ class CollectTypesVisitor {
 	 * If the declarator's type resolves to another declared type, the field line is
 	 * omitted (association will be emitted elsewhere).
 	 *
-	 * @param ownerFqn fully-qualified name of the owning type; must not be
-	 *                 {@code null}
-	 * @param fd       field declaration; must not be {@code null}
-	 * @param vd       variable declarator; must not be {@code null}
+	 * @param td fully-qualified name of the owning type; must not be {@code null}
+	 * @param fd field declaration; must not be {@code null}
+	 * @param vd variable declarator; must not be {@code null}
 	 * @throws NullPointerException if {@code ownerFqn}, {@code fd}, or {@code vd}
 	 *                              is {@code null}
 	 */
-	private void emitVariableDeclarator(String ownerFqn, FieldDeclaration fd, VariableDeclarator vd) {
-		String assoc = assocTypeFrom(ownerFqn, vd);
+	private void emitVariableDeclarator(TypeDeclaration<?> td, FieldDeclaration fd, VariableDeclarator vd) {
+		String fqn = DeclaredIndex.deriveFqnDollar(td);
+
+		// FIXME: use solver here!?
+		// DeclaredIndex resolveAssocTarget
+
+		String assoc = assocTypeFrom(fqn, vd);
 		if (assoc != null) {
 			return;
 		}
@@ -364,8 +367,8 @@ class CollectTypesVisitor {
 		String modBlock = mods.isEmpty() ? EMPTY_STRING : " {" + String.join(", ", mods) + "}";
 
 		String sp = staticPrefix.isEmpty() ? "" : staticPrefix + SPACE_STRING;
-		pw.println(vis + SPACE_STRING + sp + name + " : " + type + modBlock
-				+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(fd)));
+		String renderStereotypes = DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(fd));
+		pw.addField(vis, sp, name, type, modBlock, renderStereotypes);
 	}
 
 	/**
@@ -384,13 +387,16 @@ class CollectTypesVisitor {
 				.compareTo(b.getDeclarationAsString(false, false, false)));
 
 		for (ConstructorDeclaration c : sorted) {
-			String name = c.getNameAsString();
-			String params = c.getParameters().stream().map(p -> p.getNameAsString() + " : " + p.getType().asString())
-					.collect(Collectors.joining(", "));
-			String vis = DeclaredIndex.visibility(c);
-			pw.println(vis + " <<create>> " + name + "(" + params + ")"
-					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(c)));
+			emitConstructor(c);
 		}
+	}
+
+	private void emitConstructor(ConstructorDeclaration c) {
+		String name = c.getNameAsString();
+		String params = c.getParameters().stream().map(p -> p.getNameAsString() + " : " + p.getType().asString())
+				.collect(Collectors.joining(", "));
+		String vis = DeclaredIndex.visibility(c);
+		pw.addConstructor(vis, name, params, DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(c)));
 	}
 
 	/**
@@ -441,18 +447,22 @@ class CollectTypesVisitor {
 				.compareTo(b.getDeclarationAsString(false, false, false)));
 
 		for (MethodDeclaration m : sorted) {
-			String returnType = m.getType().asString();
-			String name = m.getNameAsString();
-			String params = m.getParameters().stream().map(p -> {
-				String anns = DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
-				return (anns + SPACE_STRING + p.getNameAsString() + " : " + p.getType().asString()).trim();
-			}).collect(Collectors.joining(", "));
-			String flags = getFlags(m);
-			String vis = DeclaredIndex.visibility(m);
-
-			pw.println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags
-					+ DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(m)));
+			emitMethod(m);
 		}
+	}
+
+	private void emitMethod(MethodDeclaration m) {
+		String returnType = m.getType().asString();
+		String name = m.getNameAsString();
+		String params = m.getParameters().stream().map(p -> {
+			String anns = DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(p));
+			return (anns + SPACE_STRING + p.getNameAsString() + " : " + p.getType().asString()).trim();
+		}).collect(Collectors.joining(", "));
+		String flags = getFlags(m);
+		String vis = DeclaredIndex.visibility(m);
+
+		pw.addMethod(vis, name, params, returnType, flags,
+				DeclaredIndex.renderStereotypes(DeclaredIndex.stereotypesOf(m)));
 	}
 
 	/**
@@ -473,6 +483,8 @@ class CollectTypesVisitor {
 	 */
 	private String assocTypeFrom(String ownerFqn, VariableDeclarator vd) {
 		String raw = DeclaredIndex.rawTypeName(vd.getType().asString());
+		// DeclaredIndex resolveAssocTarget
+
 		String resolved = idx.resolveTypeName(pkg, raw);
 		if ((resolved == null) || resolved.equals(ownerFqn)) {
 			return null;

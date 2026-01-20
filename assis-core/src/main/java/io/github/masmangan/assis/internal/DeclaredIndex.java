@@ -75,7 +75,7 @@ public class DeclaredIndex {
 	 */
 	private final Map<String, String> uniqueBySimple = new LinkedHashMap<>();
 
-	private final Map<String, String> dollarByDotNested = new LinkedHashMap<>();
+	// private final Map<String, String> dollarByDotNested = new LinkedHashMap<>();
 
 	/**
 	 *
@@ -128,14 +128,13 @@ public class DeclaredIndex {
 			}
 		}
 
-		for (String fqnDollar : byFqn.keySet()) {
-			String alias = fqnDollar.replace('$', '.'); // ONLY $ -> .
-			dollarByDotNested.put(alias, fqnDollar);
-		}
+		// for (String fqnDollar : byFqn.keySet()) {
+		// String alias = fqnDollar.replace('$', '.'); // ONLY $ -> .
+		// dollarByDotNested.put(alias, fqnDollar);
+		// }
 
 	}
 
-	// REFACTOR
 	public Iterable<String> fqnsInIndexOrder() {
 		return Collections.unmodifiableSet(byFqn.keySet());
 	}
@@ -186,7 +185,6 @@ public class DeclaredIndex {
 		}
 		return Collections.unmodifiableList(out);
 	}
-	//
 
 	/**
 	 *

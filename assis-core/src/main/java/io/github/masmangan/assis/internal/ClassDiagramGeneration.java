@@ -127,8 +127,7 @@ public final class ClassDiagramGeneration {
 				pw.beginPackage(pkg);
 			}
 			for (var td : idx.typesInPackageOrder(pkg)) {
-				String fqn = DeclaredIndex.deriveFqnDollar(td);
-				new CollectTypesVisitor(idx, pkg, pw).emitType(fqn, td);
+				new CollectTypesVisitor(idx, pkg, pw).emitType(td);
 			}
 			if (!pkg.isEmpty()) {
 				pw.println();
@@ -155,8 +154,6 @@ public final class ClassDiagramGeneration {
 		DependencyContext context = new DependencyContext(idx, pw);
 		CollectDependenciesVisitor dependenciesVisitor = new CollectDependenciesVisitor();
 		for (var td : idx.typesInIndexOrder()) {
-			// String pkgDerived = DeclaredIndex.derivePkg(td);
-			// String fqnDerived = DeclaredIndex.deriveFqnDollar(td);
 			if (DeclaredIndex.isTopLevel(td)) {
 				td.accept(dependenciesVisitor, context);
 			}

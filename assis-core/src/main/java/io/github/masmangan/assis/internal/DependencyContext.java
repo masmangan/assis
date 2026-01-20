@@ -15,6 +15,8 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.resolution.UnsolvedSymbolException;
+import com.github.javaparser.resolution.types.ResolvedType;
 
 import io.github.masmangan.assis.io.PlantUMLWriter;
 
@@ -66,7 +68,24 @@ class DependencyContext {
 			return Optional.empty();
 		}
 
-		// FIXME: Symbol Solver here...
+		logger.log(Level.INFO, () -> "Trying to resolve type: " + cit);
+		try {
+			ResolvedType rt = cit.resolve();
+			logger.log(Level.INFO, () -> "ResolvedType.describe(): " + rt.describe());
+			if (rt.isReferenceType()) {
+				logger.log(Level.INFO, () -> "QualifiedName: " + rt.asReferenceType().getQualifiedName());
+				String simpleName = rt.asReferenceType().getQualifiedName();
+
+				TypeDeclaration<?> td = idx.getByFqn(simpleName);
+				if (td == null) {
+					return Optional.of(new ExternalTypeRef(simpleName));
+				} else {
+					return Optional.of(new DeclaredTypeRef(td));
+				}
+			}
+		} catch (UnsolvedSymbolException e) {
+			logger.log(Level.INFO, () -> "UNSOLVED: " + e.getName());
+		}
 
 		String simpleName = cit.getNameAsString();
 		TypeDeclaration<?> td = idx.getByFqn(simpleName);
@@ -109,6 +128,11 @@ class DependencyContext {
 		if (to instanceof DeclaredTypeRef dtr) {
 			toFqn = DeclaredIndex.deriveFqnDollar(dtr.declaration());
 		}
+
+		// no self deps
+		if (fromFqn.equals(toFqn)) {
+			return;
+		}
 		pw.connectDepends(fromFqn, toFqn);
 		deps.add(new DepKey(from, to));
 	}
@@ -125,6 +149,10 @@ class DependencyContext {
 			toFqn = DeclaredIndex.deriveFqnDollar(dtr.declaration());
 		} else {
 			toFqn = to.displayName();
+		}
+		// no self deps
+		if (fromFqn.equals(toFqn)) {
+			return;
 		}
 		pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectDepends(fromFqn, toFqn));
 		deps.add(new DepKey(from, to));
