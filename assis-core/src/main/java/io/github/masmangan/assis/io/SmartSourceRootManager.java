@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 
+import io.github.masmangan.assis.util.DeterministicPathList;
+
 /**
  * Scans a set of Java source root directories.
  *
@@ -48,19 +50,19 @@ public class SmartSourceRootManager {
 	 * Returned compilation units are sorted by declared package and type names
 	 * (file system paths are intentionally ignored).
 	 *
-	 * @param sourceRoots one or more Java source root directories; must not be
-	 *                    {@code null} or empty
+	 * @param sortedSourceRoots one or more Java source root directories; must not
+	 *                          be {@code null} or empty
 	 * @return compilation units successfully parsed from all roots
 	 * @throws IOException if an I/O error occurs while scanning or parsing
 	 */
-	public static List<CompilationUnit> autoscan(List<Path> sourceRoots) throws IOException {
+	public static List<CompilationUnit> autoscan(DeterministicPathList sortedSourceRoots) throws IOException {
 		// checkSourceRoots(sourceRoots);
 
 		List<CompilationUnit> units = new ArrayList<>();
 
 		logger.log(Level.INFO, () -> "Scanning started");
 
-		for (Path src : sourceRoots) {
+		for (Path src : sortedSourceRoots) {
 
 			logger.log(Level.INFO, () -> "Scanning " + src);
 

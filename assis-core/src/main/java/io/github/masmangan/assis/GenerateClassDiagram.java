@@ -8,7 +8,6 @@ package io.github.masmangan.assis;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -20,6 +19,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import io.github.masmangan.assis.internal.ClassDiagramGeneration;
 import io.github.masmangan.assis.internal.DeclaredIndex;
 import io.github.masmangan.assis.io.SmartSourceRootManager;
+import io.github.masmangan.assis.util.DeterministicPathList;
 
 /**
  * Generates a PlantUML class diagram from one or more Java source roots.
@@ -86,7 +86,7 @@ public class GenerateClassDiagram {
 	 *                                  or writing the output file
 	 */
 	public static void generate(final Set<Path> sourceRoots, final Path outDir) throws IOException {
-		checkSourceRoots(sourceRoots);
+		Objects.requireNonNull(sourceRoots, "sourceRoots");
 		Objects.requireNonNull(outDir, "outDir");
 
 		Path dir = outDir.toAbsolutePath().normalize();
@@ -97,7 +97,7 @@ public class GenerateClassDiagram {
 		Path outputFile = dir.resolve(CLASS_DIAGRAM_PUML);
 		logger.log(Level.INFO, () -> "Generating " + outputFile + "...");
 
-		List<Path> sortedSourceRoots = sortRootsByPath(sourceRoots);
+		DeterministicPathList sortedSourceRoots = DeterministicPathList.fromSourceRoots(sourceRoots);
 		List<CompilationUnit> units = SmartSourceRootManager.autoscan(sortedSourceRoots);
 
 		DeclaredIndex index = new DeclaredIndex();
@@ -105,23 +105,6 @@ public class GenerateClassDiagram {
 
 		new ClassDiagramGeneration(outputFile, index).run();
 		logger.log(Level.INFO, () -> "Writing " + outputFile + " complete.");
-	}
-
-	private static List<Path> sortRootsByPath(Set<Path> sourceRoots) {
-		// @formatter:off
-		return sourceRoots.stream()
-				.map(p -> p.toAbsolutePath().normalize())
-				.distinct()
-				.sorted(Comparator.comparing(Path::toString))
-				.toList();
-		// @formatter:on
-	}
-
-	private static void checkSourceRoots(Set<Path> sourceRoots) {
-		Objects.requireNonNull(sourceRoots, "sourceRoots");
-		if (sourceRoots.isEmpty()) {
-			throw new IllegalArgumentException("sourceRoots must not be empty.");
-		}
 	}
 
 }

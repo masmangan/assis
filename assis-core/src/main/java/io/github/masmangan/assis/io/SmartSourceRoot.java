@@ -7,15 +7,10 @@ package io.github.masmangan.assis.io;
 
 import static com.github.javaparser.utils.CodeGenerationUtils.packageAbsolutePath;
 import static com.github.javaparser.utils.Utils.assertNotNull;
-import static java.nio.file.FileVisitResult.CONTINUE;
-import static java.nio.file.FileVisitResult.SKIP_SUBTREE;
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Set;
 
@@ -28,17 +23,13 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeS
 import com.github.javaparser.utils.Log;
 import com.github.javaparser.utils.SourceRoot;
 
+import io.github.masmangan.assis.util.DeterministicFileTreeWalker;
+import io.github.masmangan.assis.util.DeterministicPathList;
+
 /**
  * A {@link SourceRoot} subclass that parses Java source files recursively even
  * when directory names are not valid Java identifiers (for example, module
  * folders containing {@code '-'}).
- *
- * <p>
- * The {@code root} may or may not be the root of the package structure. Parsing
- * starts at {@code startPackage} and visits all subdirectories that are
- * considered eligible. Eligible directories must not be hidden and must not
- * match common tool directory names (see {@link #SKIP_DIR_NAMES}). If you need
- * to process such a directory, point {@code root} directly to it.
  *
  * <p>
  * Package names are taken from {@code package} declarations in the parsed
@@ -48,82 +39,25 @@ import com.github.javaparser.utils.SourceRoot;
  * This source root installs a fixed {@link JavaSymbolSolver} backed by a
  * {@link JavaParserTypeSolver} rooted at {@code rootPath}. The configuration is
  * locked after construction because other parts of the system rely on a stable
- * "unparsed types remain unresolved" rule (i.e., no
- * {@code ReflectionTypeSolver}).
- *
- * <p>
- * This class aims to preserve the original {@link SourceRoot} behavior
- * (parse/write/cache) while extending directory traversal and providing a
- * default symbol-solver configuration.
- *
- * @see SourceRoot
- * @see JavaSymbolSolver
- * @see JavaParserTypeSolver
+ * "unparsed types remain unresolved" rule (i.e., no {@code ReflectionTypeSolver}).
  */
 public class SmartSourceRoot extends SourceRoot {
-	/*
-	 * Design note -----------
-	 *
-	 * This implementation currently relies on behavior in JavaParser/SourceRoot
-	 * that is not part of a strong, documented compatibility contract. Today it
-	 * works because parsing ultimately trusts package declarations inside files
-	 * rather than requiring directory names to match valid Java identifiers.
-	 *
-	 * If future JavaParser/SymbolSolver revisions change this behavior,
-	 * SmartSourceRoot may need to take ownership of the feature by explicitly
-	 * discovering package roots.
-	 *
-	 * Planned direction:
-	 *
-	 * - Walk the file system under a project root and detect one or more package
-	 * roots (possibly across multiple modules).
-	 *
-	 * - Configure a type solver per discovered package root (or otherwise model
-	 * module boundaries) rather than assuming a single solver rooted at {@code
-	 * rootPath}.
-	 *
-	 * - Keep the "unparsed types remain unresolved" rule unless/until the system is
-	 * updated to accept reflection-based resolution.
-	 *
-	 * This is a deliberate but fragile use of SourceRoot, chosen to avoid
-	 * duplicating logic while the behavior remains stable.
-	 */
 
 	private final Path rootPath;
-
 	private boolean locked = false;
 
 	/**
-	 * Directory names skipped during traversal (VCS metadata, build output, IDE
-	 * caches).
+	 * Directory names skipped during traversal (VCS metadata, build output, IDE caches).
 	 */
-	public static final Set<String> SKIP_DIR_NAMES = Set.of(".git", ".idea", ".gradle", ".mvn", "target", "build",
-			"out", "node_modules");
+	public static final Set<String> SKIP_DIR_NAMES = Set.of(".git", ".idea", ".gradle", ".mvn", "target", "build", "out",
+			"node_modules");
 
-	/**
-	 * Creates a smart source root.
-	 *
-	 * <p>
-	 * {@code root} may be the package root itself (for example,
-	 * {@code javaparser/javaparser-core/src/main/java}) or a directory above it
-	 * (for example, {@code javaparser/javaparser-core/src}).
-	 *
-	 * <p>
-	 * If you point to a directory above the package root, ensure it is intentional:
-	 * a single call may traverse additional folders such as {@code src/main/java}
-	 * and {@code src/test/java}. Non-source folders may also be visited unless
-	 * excluded by the directory filters.
-	 *
-	 * @param root the root directory used as the base for traversal and symbol
-	 *             solving
-	 */
 	public SmartSourceRoot(Path root) {
 		super(root);
 		this.rootPath = root;
 
 		CombinedTypeSolver ts = new CombinedTypeSolver();
-		// Intentionally source-only: unparsed types remain unresolved (no
-		// ReflectionTypeSolver).
+		// Intentionally source-only: unparsed types remain unresolved (no ReflectionTypeSolver).
 		ts.add(new JavaParserTypeSolver(root));
 
 		JavaSymbolSolver jss = new JavaSymbolSolver(ts);
@@ -138,9 +72,10 @@ public class SmartSourceRoot extends SourceRoot {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * This implementation differs from {@link SourceRoot} by traversing directories
-	 * whose names are not valid Java identifiers and by skipping hidden directories
-	 * and common tool directories (see {@link #SKIP_DIR_NAMES}).
+	 * This implementation differs from {@link SourceRoot} by:
+	 * - Deterministic file discovery order (D1) via {@link DeterministicFileTreeWalker}
+	 * - Traversing directories whose names are not valid Java identifiers
+	 * - Skipping hidden directories and common tool directories
 	 */
 	@Override
 	public List<ParseResult<CompilationUnit>> tryToParse(String startPackage) throws IOException {
@@ -152,44 +87,45 @@ public class SmartSourceRoot extends SourceRoot {
 			return getCache();
 		}
 
-		Files.walkFileTree(startPath, new SimpleFileVisitor<Path>() {
+		// D1: deterministic discovery order within this source root.
+		DeterministicPathList javaFiles = DeterministicFileTreeWalker.discoverJavaFiles(Set.of(startPath),
+				dir -> shouldVisitDirectory(dir, startPath));
 
-			@Override
-			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				if (!attrs.isDirectory() && file.toString().endsWith(".java")) {
-					Path parent = file.getParent();
-					Path relative = (parent == null) ? rootPath : rootPath.relativize(parent);
-
-					String pkgPath = relative.toString().replace('\\', '/');
-
-					tryToParse(pkgPath, file.getFileName().toString());
-				}
-				return CONTINUE;
-			}
-
-			@Override
-			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-				return shouldVisitDirectory(dir) ? CONTINUE : SKIP_SUBTREE;
-			}
-		});
+		for (Path file : javaFiles) {
+			Path parent = file.getParent();
+			Path relative = (parent == null) ? rootPath : rootPath.relativize(parent);
+			String pkgPath = relative.toString().replace('\\', '/');
+			tryToParse(pkgPath, file.getFileName().toString());
+		}
 
 		return getCache();
 	}
 
-	private boolean shouldVisitDirectory(Path dir) throws IOException {
-		String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
+	/**
+	 * Directory filter used during traversal.
+	 *
+	 * @param dir       directory being considered
+	 * @param startPath directory where traversal started for this call
+	 */
+	private boolean shouldVisitDirectory(Path dir, Path startPath) {
+	    String name = (dir.getFileName() == null) ? "" : dir.getFileName().toString();
 
-		if (!rootPath.equals(dir) && Files.isHidden(dir)) {
-			Log.trace("Not processing directory \"%s\"", () -> name);
-			return false;
-		}
+	    try {
+	        if (!dir.equals(startPath) && Files.isHidden(dir)) {
+	            Log.trace("Not processing directory \"%s\"", () -> name);
+	            return false;
+	        }
+	    } catch (IOException e) {
+	        // Best effort: if we cannot determine, do not skip
+	        Log.trace("Could not determine if directory is hidden: \"%s\"", () -> name);
+	    }
 
-		if (SKIP_DIR_NAMES.contains(name)) {
-			Log.trace("Skipping directory \"%s\"", () -> name);
-			return false;
-		}
+	    if (SKIP_DIR_NAMES.contains(name)) {
+	        Log.trace("Skipping directory \"%s\"", () -> name);
+	        return false;
+	    }
 
-		return true;
+	    return true;
 	}
 
 	/**

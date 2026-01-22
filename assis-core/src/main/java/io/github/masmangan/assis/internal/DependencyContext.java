@@ -74,11 +74,11 @@ class DependencyContext {
 			logger.log(Level.INFO, () -> "ResolvedType.describe(): " + rt.describe());
 			if (rt.isReferenceType()) {
 				logger.log(Level.INFO, () -> "QualifiedName: " + rt.asReferenceType().getQualifiedName());
-				String simpleName = rt.asReferenceType().getQualifiedName();
-
-				TypeDeclaration<?> td = idx.getByFqn(simpleName);
+				String qualifiedName = rt.asReferenceType().getQualifiedName();
+//DeclaredIndex.deriveFqnDollar(
+				TypeDeclaration<?> td = idx.getByFqn(qualifiedName);
 				if (td == null) {
-					return Optional.of(new ExternalTypeRef(simpleName));
+					return Optional.of(new ExternalTypeRef(qualifiedName));
 				} else {
 					return Optional.of(new DeclaredTypeRef(td));
 				}
@@ -87,7 +87,7 @@ class DependencyContext {
 			logger.log(Level.INFO, () -> "UNSOLVED: " + e.getName());
 		}
 
-		String simpleName = cit.getNameAsString();
+		String simpleName = cit.getNameWithScope(); // was getNameAsString
 		TypeDeclaration<?> td = idx.getByFqn(simpleName);
 		if (td == null) {
 			return Optional.of(new ExternalTypeRef(simpleName));
