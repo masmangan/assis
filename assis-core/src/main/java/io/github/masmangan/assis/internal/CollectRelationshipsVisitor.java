@@ -201,7 +201,7 @@ class CollectRelationshipsVisitor {
 	 */
 	private void emitAssociation(String ownerFqn, String targetFqn, String role, String stereotypes) {
 		pw.connectAssociation(ownerFqn, targetFqn, role, stereotypes);
-		// log here!
+		// add a list of of associations here to avoid deps sobreposition later!
 	}
 
 	/**
@@ -258,7 +258,7 @@ class CollectRelationshipsVisitor {
 					if (rt.isReferenceType()) {
 						logger.log(Level.INFO, () -> "QualifiedName: " + rt.asReferenceType().getQualifiedName());
 						// FIXME: must get dot dollar name
-						/// 
+						///
 						target = rt.asReferenceType().getQualifiedName();
 					}
 				} catch (UnsolvedSymbolException e) {
