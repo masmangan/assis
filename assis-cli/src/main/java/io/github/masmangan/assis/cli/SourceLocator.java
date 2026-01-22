@@ -10,37 +10,38 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
- * 
+ *
  */
 final class SourceLocator {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final Logger LOG = Logger.getLogger(SourceLocator.class.getName());
 
 	/**
-	 * 
+	 *
 	 */
 	static final Path MAVEN = Path.of("src/main/java");
-	
+
 	/**
-	 * 
+	 *
 	 */
 	static final Path SRC = Path.of("src");
-	
+
 	/**
-	 * 
+	 *
 	 */
 	static final Path DOT = Path.of(".");
 
 	/**
-	 * 
+	 *
 	 */
 	private static final List<Path> CANDIDATES = List.of(MAVEN, SRC, DOT);
 
@@ -64,58 +65,50 @@ final class SourceLocator {
 
 	}
 
-	/**
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
+	private static Optional<Path> acceptCandidate(Path candidate) throws IOException {
+		Path abs = candidate.toAbsolutePath().normalize();
+
+		LOG.info(() -> "Trying candidate directory: " + candidate);
+		LOG.info(() -> "Trying source directory: " + abs);
+
+		if (!Files.isDirectory(abs)) {
+			LOG.info(() -> "Not a directory. Skipping: " + abs);
+			return Optional.empty();
+		}
+
+		if (!containsJava(abs)) {
+			LOG.info(() -> "No source code inside. Skipping: " + abs);
+			return Optional.empty();
+		}
+
+		return Optional.of(abs);
+	}
+
 	private static Set<Path> extractFirstDefault() throws IOException {
-		boolean mavenDirExists = Files.isDirectory(MAVEN);
-		boolean mavenHasJava = mavenDirExists && containsJava(MAVEN);
-		boolean dotHasJava = Files.isDirectory(DOT) && containsJava(DOT);
-
 		for (Path candidate : CANDIDATES) {
-			Path abs = candidate.toAbsolutePath().normalize();
-			LOG.info(() -> "Trying source directory: " + abs);
-
-			boolean invalid = false;
-
-			if (!Files.isDirectory(abs)) {
-				LOG.info(() -> "Not a directory. Skipping: " + candidate.toString());
-				invalid = true;
-			}
-
-			if (!containsJava(abs)) {
-				LOG.info(() -> "No source code inside. Skipping: " + candidate.toString());
-				invalid = true;
-			}
-
-			if (invalid) {
+			Optional<Path> ok = acceptCandidate(candidate);
+			if (ok.isEmpty()) {
 				continue;
 			}
 
+			Path abs = ok.get();
 			LOG.info(() -> "Using source directory: " + abs);
 
 			if (candidate.equals(DOT)) {
 				LOG.warning(() -> "Falling back to '.' as source root. "
 						+ "If you expected Maven layout, run ASSIS from the project root, "
 						+ "or use -sourcepath/--source-path to point to the desired folder.");
-
-				if (mavenDirExists && !mavenHasJava && dotHasJava) {
-					LOG.warning(() -> "Note: 'src/main/java' exists but contains no .java files; '.' does. "
-							+ "This often happens with BlueJ/intro projects or when running from a subfolder.");
-				}
 			}
 
 			return Set.of(abs);
 		}
+
 		LOG.severe("No Java source directory found. Tried: src/main/java, src, .");
 		throw new IllegalStateException("No Java source directory found (tried: src/main/java, src, .)");
-
 	}
 
 	/**
-	 * 
+	 *
 	 * @param requested
 	 * @return
 	 * @throws IOException
@@ -142,7 +135,7 @@ final class SourceLocator {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param dir
 	 * @param isExplicit
 	 * @throws IOException
@@ -162,7 +155,7 @@ final class SourceLocator {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param dir
 	 * @return
 	 * @throws IOException
@@ -174,7 +167,7 @@ final class SourceLocator {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private SourceLocator() {
 	}
