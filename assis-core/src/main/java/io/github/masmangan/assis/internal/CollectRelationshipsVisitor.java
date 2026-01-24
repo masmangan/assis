@@ -20,7 +20,6 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import io.github.masmangan.assis.io.PlantUMLWriter;
 
-
 /**
  * Emits PlantUML relationship edges for all declared types in a
  * {@link DeclaredIndex}.
@@ -142,17 +141,44 @@ class CollectRelationshipsVisitor {
 	private void emitExtendsImplements(String pkg, String subFqn, TypeDeclaration<?> td) {
 		if (td instanceof ClassOrInterfaceDeclaration cid) {
 			for (ClassOrInterfaceType ext : cid.getExtendedTypes()) {
-				emitExtends(pkg, subFqn, ext);
+				emitExtends(cid, ext);
 			}
 
 			for (ClassOrInterfaceType impl : cid.getImplementedTypes()) {
-				emitImplements(pkg, subFqn, impl);
+				emitImplements(cid, impl);
 			}
 		} else if (td instanceof EnumDeclaration ed) {
 			for (ClassOrInterfaceType impl : ed.getImplementedTypes()) {
 				emitImplements(pkg, subFqn, impl);
 			}
 		}
+	}
+
+	private void emitImplements(TypeDeclaration<?> td, ClassOrInterfaceType impl) {
+		String subFqn = DeclaredIndex.deriveFqnDollar(td);
+
+		Optional<TypeRef> tr = idx.resolveTarget(impl, td);
+		logger.log(Level.INFO, () -> "Trying to resolve implements type: " + tr);
+
+		if (tr.isPresent()) {
+			TypeRef ref = tr.get();
+
+			if (ref instanceof DeclaredTypeRef dtr) {
+				String target = DeclaredIndex.deriveFqnDollar(dtr.declaration());
+				pw.connectImplements(subFqn, target);
+				return;
+			}
+
+			if (ref instanceof ExternalTypeRef etr) {
+				pw.connectImplements(subFqn, etr.fqn());
+				return;
+			}
+
+			pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectImplements(subFqn, ref.displayName()));
+			return;
+		}
+
+		pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectImplements(subFqn, impl.getNameWithScope()));
 	}
 
 	/**
@@ -176,18 +202,36 @@ class CollectRelationshipsVisitor {
 	/**
 	 *
 	 * @param pkg
-	 * @param subFqn
+	 * @param td
 	 * @param ext
 	 */
-	private void emitExtends(String pkg, String subFqn, ClassOrInterfaceType ext) {
-		String nameWithScope = ext.getNameWithScope();
-		String raw = DeclaredIndex.simpleName(nameWithScope);
-		String target = idx.resolveTypeName(pkg, raw);
-		if (target != null) {
-			pw.connectExtends(subFqn, target);
-		} else {
-			pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectExtends(subFqn, nameWithScope));
+	private void emitExtends(ClassOrInterfaceDeclaration cid, ClassOrInterfaceType ext) {
+		String subFqn = DeclaredIndex.deriveFqnDollar(cid);
+
+		Optional<TypeRef> tr = idx.resolveTarget(ext, cid);
+		logger.log(Level.INFO, () -> "Trying to resolve extends type: " + tr);
+
+		if (tr.isPresent()) {
+			TypeRef ref = tr.get();
+
+			if (ref instanceof DeclaredTypeRef dtr) {
+				String target = DeclaredIndex.deriveFqnDollar(dtr.declaration());
+				pw.connectExtends(subFqn, target);
+				return;
+			}
+
+			if (ref instanceof ExternalTypeRef etr) {
+				pw.connectExtends(subFqn, etr.fqn());
+				return;
+			}
+
+			// Unresolved (or other TypeRef): ghost
+			pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectExtends(subFqn, ref.displayName()));
+			return;
 		}
+
+		// Fallback (should be rare for extends)
+		pw.withBeforeTag("@assis:cherry-pick ghost", () -> pw.connectExtends(subFqn, ext.getNameWithScope()));
 	}
 
 	/**

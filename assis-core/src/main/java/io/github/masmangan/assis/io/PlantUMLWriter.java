@@ -642,6 +642,37 @@ public final class PlantUMLWriter implements AutoCloseable {
 		out.println();
 	}
 
+	public void addField(String vis, String sp, String name, String type, String modBlock, String renderStereotypes) {
+		checkName(name);
+		println(vis + SPACE_STRING + sp + name + " : " + type + modBlock + renderStereotypes);
+	}
+
+	public void addMethod(String vis, String name, String params, String returnType, String flags,
+			String renderStereotypes) {
+		checkName(name);
+		println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags + renderStereotypes);
+	}
+
+	public void addConstructor(String vis, String name, String params, String renderStereotypes) {
+		checkName(name);
+		println(vis + " <<create>> " + name + "(" + params + ")" + renderStereotypes);
+	}
+
+	public void addRecordComponent(String name, String type, String renderStereotypes) {
+		checkName(name);
+		println(name + " : " + type + renderStereotypes);
+	}
+
+	public void addAnnotationMember(String name, String type, String defaultValue, String renderStereotypes) {
+		checkName(name);
+		println(name + "() : " + type + defaultValue + renderStereotypes);
+	}
+
+	public void addEnumConstant(String name) {
+		checkName(name);
+		println(name);
+	}
+
 	/**
 	 *
 	 * @param s
@@ -765,32 +796,6 @@ public final class PlantUMLWriter implements AutoCloseable {
 			return "";
 		}
 		return prefix + s;
-	}
-
-	public void addEnumConstant(String name) {
-		checkName(name);
-		println(name);
-	}
-
-	public void addField(String vis, String sp, String name, String type, String modBlock, String renderStereotypes) {
-		println(vis + SPACE_STRING + sp + name + " : " + type + modBlock + renderStereotypes);
-	}
-
-	public void addMethod(String vis, String name, String params, String returnType, String flags,
-			String renderStereotypes) {
-		println(vis + SPACE_STRING + name + "(" + params + ") : " + returnType + flags + renderStereotypes);
-	}
-
-	public void addConstructor(String vis, String name, String params, String renderStereotypes) {
-		println(vis + " <<create>> " + name + "(" + params + ")" + renderStereotypes);
-	}
-
-	public void addRecordComponent(String nameAsString, String type, String renderStereotypes) {
-		println(nameAsString + " : " + type + renderStereotypes);
-	}
-
-	public void addAnnotationMember(String name, String type, String defaultValue, String renderStereotypes) {
-		println(name + "() : " + type + defaultValue + renderStereotypes);
 	}
 
 }

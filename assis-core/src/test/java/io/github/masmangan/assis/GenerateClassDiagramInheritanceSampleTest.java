@@ -23,18 +23,18 @@ class GenerateClassDiagramInheritanceSampleTest {
 		String puml = TestWorkbench.generatePumlFromSample("samples/inheritance", tempDir, "inheritance");
 
 		// types
-		assertPumlContains(puml, "interface \"samples.inheritance.A\"");
-		assertPumlContains(puml, "interface \"samples.inheritance.B\"");
-		assertPumlContainsClass(puml, "samples.inheritance.Base");
-		assertPumlContainsClass(puml, "samples.inheritance.Child");
+		assertPumlContains(puml, "interface \"pa.A\"");
+		assertPumlContainsClass(puml, "pa.Base");
+		assertPumlContains(puml, "interface \"pb.B\"");
+		assertPumlContainsClass(puml, "pb.Child");
 
-		assertPumlContains(puml, "enum \"samples.inheritance.E\"");
+		assertPumlContains(puml, "enum \"pb.E\"");
 
 		// relationships
-		assertPumlContains(puml, "\"samples.inheritance.B\" --|> \"samples.inheritance.A\"");
-		assertPumlContains(puml, "\"samples.inheritance.Child\" --|> \"samples.inheritance.Base\"");
-		assertPumlContains(puml, "\"samples.inheritance.Child\" ..|> \"samples.inheritance.B\"");
+		assertPumlContains(puml, "\"pb.B\" --|> \"pa.A\"");
+		assertPumlContains(puml, "\"pb.Child\" --|> \"pa.Base\"");
+		assertPumlContains(puml, "\"pb.Child\" ..|> \"pb.B\"");
 
-		assertAnyLineContainsAll(puml, "E", "..|>", "A");
+		assertAnyLineContainsAll(puml, "pb.E", "..|>", "pa.A");
 	}
 }

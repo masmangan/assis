@@ -62,7 +62,7 @@ public class SmartSourceRoot extends SourceRoot {
 		CombinedTypeSolver ts = new CombinedTypeSolver();
 		// Intentionally source-only: unparsed types remain unresolved (no
 		// ReflectionTypeSolver).
-		
+
 		ts.add(new JavaParserTypeSolver(root));
 		ts.add(new ReflectionTypeSolver());
 
