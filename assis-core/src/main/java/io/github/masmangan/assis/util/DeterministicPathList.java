@@ -57,7 +57,6 @@ public final class DeterministicPathList implements Iterable<Path> {
 	/* ===================== internals ===================== */
 
 	private static List<Path> sortRootsByPath(final Set<Path> sourceRoots) {
-		// Track collapses: multiple raw roots -> same normalized absolute path
 		Map<String, List<String>> occurrences = new LinkedHashMap<>();
 
 		boolean sawNull = false;
@@ -94,13 +93,11 @@ public final class DeterministicPathList implements Iterable<Path> {
 		}
 
 		// @formatter:off
-        List<Path> sorted = occurrences.keySet().stream()
+        return occurrences.keySet().stream()
                 .map(Path::of)
                 .sorted(Comparator.comparing(Path::toString))
                 .toList();
         // @formatter:on
-
-		return sorted;
 	}
 
 	private static void checkSourceRoots(final Set<Path> sourceRoots) {
