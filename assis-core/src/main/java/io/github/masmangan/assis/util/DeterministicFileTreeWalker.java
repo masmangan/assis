@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -27,13 +26,6 @@ import java.util.stream.Collectors;
  * path
  */
 public final class DeterministicFileTreeWalker {
-
-	public enum EntryKind {
-		DIR, FILE
-	}
-
-	public record Entry(EntryKind kind, Path path) {
-	}
 
 	private DeterministicFileTreeWalker() {
 	}
@@ -67,35 +59,6 @@ public final class DeterministicFileTreeWalker {
 		return DeterministicPathList.of(out);
 	}
 
-	/**
-	 * Discovers directories and files under the given roots in a deterministic
-	 * order.
-	 *
-	 * @param roots          source roots (files or directories)
-	 * @param shouldVisitDir predicate to decide whether to traverse into a
-	 *                       directory
-	 */
-	public static List<Entry> discoverAllEntries(Set<Path> roots, Predicate<Path> shouldVisitDir) throws IOException {
-		Objects.requireNonNull(shouldVisitDir, "shouldVisitDir");
-
-		List<Path> canonRoots = canonicalizeRoots(roots);
-
-		List<Entry> out = new ArrayList<>();
-		for (Path root : canonRoots) {
-			if (!Files.exists(root)) {
-				continue;
-			}
-
-			if (Files.isDirectory(root)) {
-				out.add(new Entry(EntryKind.DIR, root));
-				walkDirEntries(root, out, shouldVisitDir);
-			} else if (Files.isRegularFile(root)) {
-				out.add(new Entry(EntryKind.FILE, root));
-			}
-		}
-		return Collections.unmodifiableList(out);
-	}
-
 	/* ===================== internals ===================== */
 
 	private static void walkDirForJava(Path dir, List<Path> out, Predicate<Path> shouldVisitDir) throws IOException {
@@ -106,19 +69,6 @@ public final class DeterministicFileTreeWalker {
 				}
 			} else if (Files.isRegularFile(child) && child.toString().endsWith(".java")) {
 				out.add(child);
-			}
-		}
-	}
-
-	private static void walkDirEntries(Path dir, List<Entry> out, Predicate<Path> shouldVisitDir) throws IOException {
-		for (Path child : sortedChildren(dir)) {
-			if (Files.isDirectory(child)) {
-				if (shouldVisitDir.test(child)) {
-					out.add(new Entry(EntryKind.DIR, child));
-					walkDirEntries(child, out, shouldVisitDir);
-				}
-			} else if (Files.isRegularFile(child)) {
-				out.add(new Entry(EntryKind.FILE, child));
 			}
 		}
 	}

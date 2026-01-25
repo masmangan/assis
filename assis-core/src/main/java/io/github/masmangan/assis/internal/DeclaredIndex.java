@@ -273,6 +273,8 @@ public class DeclaredIndex {
 							TypeDeclaration<?> indexed = getByFqn(fqnDollar);
 							if (indexed != null) {
 								return Optional.of(new DeclaredTypeRef(indexed));
+							} else {
+				                return Optional.of(new ExternalTypeRef(fqnDollar));								
 							}
 						}
 					}
@@ -286,12 +288,13 @@ public class DeclaredIndex {
 				// 1b) Otherwise, use solver’s qualified name (dot form)
 				try {
 					String qualifiedName = rrt.getQualifiedName();
-					logger.log(Level.INFO, () -> "QualifiedName: " + qualifiedName);
+					logger.log(Level.INFO, () -> "QualifiedName dot-dot: " + qualifiedName);
 
 					// If your index expects $ for nested, you may want a normalizer.
 					// But staying “less design change”: just try both if you can.
 					TypeDeclaration<?> td = getByFqn(qualifiedName);
 					if (td != null) {
+						logger.log(Level.SEVERE, () -> "QualifiedName dot-dot succeeded on index (1): " + qualifiedName);
 						return Optional.of(new DeclaredTypeRef(td));
 					}
 					return Optional.of(new ExternalTypeRef(qualifiedName));
@@ -317,9 +320,13 @@ public class DeclaredIndex {
 		String fallbackName = cit.getNameWithScope();
 		TypeDeclaration<?> td = getByFqn(fallbackName);
 		if (td != null) {
+			logger.log(Level.SEVERE, () -> "QualifiedName dot-dot succeeded on index (2): " + fallbackName);
+
 			return Optional.of(new DeclaredTypeRef(td));
 		}
-		return Optional.of(new ExternalTypeRef(fallbackName));
+		logger.log(Level.INFO, () -> "UNSOLVED: " + cit.getNameWithScope());
+
+		return Optional.of(new UnresolvedTypeRef(fallbackName));
 
 		//
 		// String raw = cit.getNameAsString(); // simple name
