@@ -256,7 +256,7 @@ public class DeclaredIndex {
 		if (solved.isPresent()) {
 			return solved;
 		}
-		
+
 		// 2) Best-effort textual fallback (ghost/external)
 		// getNameWithScope keeps Outer.Inner if present in source, which is better than
 		// simple name.
@@ -303,7 +303,7 @@ public class DeclaredIndex {
 				Optional<TypeRef> refName = tryResolveUsingQualifiedName(rrt);
 				if (refName.isPresent()) {
 					return refName;
-				}				
+				}
 			}
 		} catch (UnsolvedSymbolException e) {
 			logger.log(Level.INFO, () -> "UNSOLVED: " + e.getName());
@@ -349,15 +349,14 @@ public class DeclaredIndex {
 					if (indexed != null) {
 						return Optional.of(new DeclaredTypeRef(indexed));
 					} else {
-		                return Optional.of(new ExternalTypeRef(fqnDollar));								
+						return Optional.of(new ExternalTypeRef(fqnDollar));
 					}
 				}
 			}
 
 		} catch (RuntimeException ex) {
 			// Some solvers/declarations may throw UnsupportedOperationException, etc.
-			logger.log(Level.INFO,
-					() -> "TypeDeclaration/toAst not available: " + ex.getClass().getSimpleName());
+			logger.log(Level.INFO, () -> "TypeDeclaration/toAst not available: " + ex.getClass().getSimpleName());
 		}
 		return Optional.empty();
 

@@ -30,7 +30,7 @@ class GenerateClassDiagramTypeRefsSampleTest {
 		assertPumlContainsClass(puml, "F");
 
 		assertAnyLineContainsAll(puml, "A", "..|>", "Serializable");
-		
+
 		assertAnyLineContainsAll(puml, "ghost", "B", "--|>", "BB");
 		assertAnyLineContainsAll(puml, "C", "--|>", "JPanel");
 		assertAnyLineContainsAll(puml, "ghost", "D", "--|>", "DD");

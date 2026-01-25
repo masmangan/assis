@@ -36,10 +36,9 @@ public class SmartSourceRootManager {
 
 	private static final Logger logger = Logger.getLogger(SmartSourceRootManager.class.getName());
 
-	
 	private SmartSourceRootManager() {
 	}
-	
+
 	/**
 	 * Scans the given Java source root directories and parses all {@code .java}
 	 * files found.
@@ -63,7 +62,7 @@ public class SmartSourceRootManager {
 	 */
 	public static List<CompilationUnit> autoscan(DeterministicPathList sortedSourceRoots) throws IOException {
 		Objects.requireNonNull(sortedSourceRoots);
-		
+
 		List<CompilationUnit> units = new ArrayList<>();
 
 		logger.log(Level.INFO, () -> "Scanning started");
@@ -85,8 +84,8 @@ public class SmartSourceRootManager {
 			for (ParseResult<CompilationUnit> r : results) {
 				Optional<CompilationUnit> opt = r.getResult();
 				if (opt.isPresent()) {
-				    units.add(opt.get());
-				    addedFromThisRoot++;
+					units.add(opt.get());
+					addedFromThisRoot++;
 				}
 			}
 
