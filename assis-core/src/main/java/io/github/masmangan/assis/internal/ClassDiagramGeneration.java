@@ -14,7 +14,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.github.masmangan.assis.AssisInfo;
-import io.github.masmangan.assis.GenerateClassDiagram;
 import io.github.masmangan.assis.io.PlantUMLWriter;
 
 /**
@@ -35,7 +34,7 @@ import io.github.masmangan.assis.io.PlantUMLWriter;
  */
 public final class ClassDiagramGeneration {
 
-	private static final Logger logger = Logger.getLogger(GenerateClassDiagram.class.getName());
+	private static final Logger logger = Logger.getLogger(ClassDiagramGeneration.class.getName());
 
 	private final Path outFile;
 
