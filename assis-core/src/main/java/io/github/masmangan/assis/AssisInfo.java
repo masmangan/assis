@@ -9,6 +9,10 @@ package io.github.masmangan.assis;
  * Placeholder for ASSIS CORE information.
  */
 public class AssisInfo {
+	
+	private AssisInfo() {
+		
+	}
 	/**
 	 * Returns the implementation version of the running package, or {@code "dev"}
 	 * when the version metadata is not available (e.g., during local development).
