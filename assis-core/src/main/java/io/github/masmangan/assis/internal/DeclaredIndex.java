@@ -295,47 +295,15 @@ public class DeclaredIndex {
 				ResolvedReferenceType rrt = rt.asReferenceType();
 
 				// 1a) If solver can give us the declaring AST node, prefer that
-				try {
-					Optional<ResolvedReferenceTypeDeclaration> optRtd = rrt.getTypeDeclaration();
-					if (optRtd.isPresent()) {
-						ResolvedReferenceTypeDeclaration rtd = optRtd.get();
-
-						Optional<Node> astNode = rtd.toAst();
-						if (astNode.isPresent() && astNode.get() instanceof TypeDeclaration<?> td) {
-							String fqnDollar = DeclaredIndex.deriveFqnDollar(td);
-
-							TypeDeclaration<?> indexed = getByFqn(fqnDollar);
-							if (indexed != null) {
-								return Optional.of(new DeclaredTypeRef(indexed));
-							} else {
-				                return Optional.of(new ExternalTypeRef(fqnDollar));								
-							}
-						}
-					}
-
-				} catch (RuntimeException ex) {
-					// Some solvers/declarations may throw UnsupportedOperationException, etc.
-					logger.log(Level.INFO,
-							() -> "TypeDeclaration/toAst not available: " + ex.getClass().getSimpleName());
+				Optional<TypeRef> refNode = tryResolveUsingNode(rrt);
+				if (refNode.isPresent()) {
+					return refNode;
 				}
-
 				// 1b) Otherwise, use solver’s qualified name (dot form)
-				try {
-					String qualifiedName = rrt.getQualifiedName();
-					logger.log(Level.INFO, () -> "QualifiedName dot-dot: " + qualifiedName);
-
-					// If your index expects $ for nested, you may want a normalizer.
-					// But staying “less design change”: just try both if you can.
-					TypeDeclaration<?> td = getByFqn(qualifiedName);
-					if (td != null) {
-						logger.log(Level.SEVERE, () -> "QualifiedName dot-dot succeeded on index (1): " + qualifiedName);
-						return Optional.of(new DeclaredTypeRef(td));
-					}
-					return Optional.of(new ExternalTypeRef(qualifiedName));
-				} catch (RuntimeException ex) {
-					logger.log(Level.INFO, () -> "Could not read qualified name: " + ex.getClass().getSimpleName());
-					// fall through to textual fallback below
-				}
+				Optional<TypeRef> refName = tryResolveUsingQualifiedName(rrt);
+				if (refName.isPresent()) {
+					return refName;
+				}				
 			}
 		} catch (UnsolvedSymbolException e) {
 			logger.log(Level.INFO, () -> "UNSOLVED: " + e.getName());
@@ -345,6 +313,54 @@ public class DeclaredIndex {
 			logger.log(Level.INFO, () -> "Resolve failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
 		}
 		return Optional.empty();
+	}
+
+	private Optional<TypeRef> tryResolveUsingQualifiedName(ResolvedReferenceType rrt) {
+		try {
+			String qualifiedName = rrt.getQualifiedName();
+			logger.log(Level.INFO, () -> "QualifiedName dot-dot: " + qualifiedName);
+
+			// If your index expects $ for nested, you may want a normalizer.
+			// But staying “less design change”: just try both if you can.
+			TypeDeclaration<?> td = getByFqn(qualifiedName);
+			if (td != null) {
+				logger.log(Level.SEVERE, () -> "QualifiedName dot-dot succeeded on index (1): " + qualifiedName);
+				return Optional.of(new DeclaredTypeRef(td));
+			}
+			return Optional.of(new ExternalTypeRef(qualifiedName));
+		} catch (RuntimeException ex) {
+			logger.log(Level.INFO, () -> "Could not read qualified name: " + ex.getClass().getSimpleName());
+			// fall through to textual fallback below
+		}
+		return Optional.empty();
+	}
+
+	private Optional<TypeRef> tryResolveUsingNode(ResolvedReferenceType rrt) {
+		try {
+			Optional<ResolvedReferenceTypeDeclaration> optRtd = rrt.getTypeDeclaration();
+			if (optRtd.isPresent()) {
+				ResolvedReferenceTypeDeclaration rtd = optRtd.get();
+
+				Optional<Node> astNode = rtd.toAst();
+				if (astNode.isPresent() && astNode.get() instanceof TypeDeclaration<?> td) {
+					String fqnDollar = DeclaredIndex.deriveFqnDollar(td);
+
+					TypeDeclaration<?> indexed = getByFqn(fqnDollar);
+					if (indexed != null) {
+						return Optional.of(new DeclaredTypeRef(indexed));
+					} else {
+		                return Optional.of(new ExternalTypeRef(fqnDollar));								
+					}
+				}
+			}
+
+		} catch (RuntimeException ex) {
+			// Some solvers/declarations may throw UnsupportedOperationException, etc.
+			logger.log(Level.INFO,
+					() -> "TypeDeclaration/toAst not available: " + ex.getClass().getSimpleName());
+		}
+		return Optional.empty();
+
 	}
 
 	/**
