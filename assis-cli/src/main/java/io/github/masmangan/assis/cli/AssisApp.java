@@ -64,7 +64,7 @@ public final class AssisApp {
 		try {
 			cli = CliArgs.parse(args);
 		} catch (IllegalArgumentException e) {
-			LOG.log(Level.SEVERE, "Exception after parse: " + e.getMessage());
+			LOG.log(Level.SEVERE, () -> "Exception after parse: " + e.getMessage());
 			return 1;
 		}
 
@@ -82,7 +82,7 @@ public final class AssisApp {
 		try {
 			sourceRoots = SourceLocator.resolve(cli.sourceRoots);
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Exception after resolve: " + e.getMessage());
+			LOG.log(Level.SEVERE, () -> "Exception after resolve: " + e.getMessage());
 			return 2;
 		}
 
@@ -105,7 +105,7 @@ public final class AssisApp {
 
 			return 0;
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Exception during generation: " + e.getMessage());
+			LOG.log(Level.SEVERE, () -> "Exception during generation: " + e.getMessage());
 			return 3;
 		}
 	}
