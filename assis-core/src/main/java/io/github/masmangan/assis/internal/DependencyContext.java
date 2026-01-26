@@ -47,8 +47,7 @@ class DependencyContext {
 	 * @return
 	 */
 	public Optional<TypeRef> resolveScopeName(String simpleName, Node usageSite) {
-		// TODO Auto-generated method stub
-		return Optional.empty();
+		return idx.resolveScopeName(simpleName, usageSite);
 	}
 
 	/**
