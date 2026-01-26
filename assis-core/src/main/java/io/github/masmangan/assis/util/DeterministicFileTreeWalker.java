@@ -44,15 +44,12 @@ public final class DeterministicFileTreeWalker {
 
 		List<Path> out = new ArrayList<>();
 		for (Path root : canonRoots) {
-			if (!Files.exists(root)) {
-				continue;
-			}
-			if (Files.isRegularFile(root) && root.toString().endsWith(".java")) {
-				out.add(root);
-				continue;
-			}
-			if (Files.isDirectory(root)) {
-				walkDirForJava(root, out, shouldVisitDir);
+			if (Files.exists(root)) {
+				if (Files.isDirectory(root)) {
+					walkDirForJava(root, out, shouldVisitDir);
+				} else if (Files.isRegularFile(root) && root.toString().endsWith(".java")) {
+					out.add(root);
+				}
 			}
 		}
 		return DeterministicPathList.of(out);
