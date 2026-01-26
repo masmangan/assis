@@ -108,4 +108,37 @@ class GenerateClassDiagramDependencyCoverageSamplesTest {
 		assertAnyLineContainsAll(puml, "A", "-->", "c", "C");
 		assertPumlNotContains(puml, "..>");
 	}
+
+	@Test
+	void instanceOfsAreEmitted() throws Exception {
+		String puml = generatePumlFromSample("samples/deps/byinstanceof", tempDir, "byinstanceof");
+
+		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
+		assertPumlNotContains(puml, "-->");
+	}
+
+	@Test
+	void castsAreEmitted() throws Exception {
+		String puml = generatePumlFromSample("samples/deps/bycast", tempDir, "bycast");
+
+		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
+		assertPumlNotContains(puml, "-->");
+	}
+
+	@Test
+	void classLiteralsAreEmitted() throws Exception {
+		String puml = generatePumlFromSample("samples/deps/byclassliteral", tempDir, "byclassliteral");
+
+		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
+		assertPumlNotContains(puml, "-->");
+	}
+
+	@Test
+	void namedExpsAreEmitted() throws Exception {
+		String puml = generatePumlFromSample("samples/deps/byscope", tempDir, "byscope");
+
+		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
+		assertPumlNotContains(puml, "-->");
+	}
+
 }

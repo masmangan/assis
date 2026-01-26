@@ -98,7 +98,7 @@ public class DeclaredIndex {
 		for (Map.Entry<TypeKey, String> e : pkgByKey.entrySet()) {
 			TypeKey key = e.getKey();
 			String pkg = e.getValue();
-			keysByPkg.computeIfAbsent(pkg, __ -> new ArrayList<>()).add(key);
+			keysByPkg.computeIfAbsent(pkg, ignored -> new ArrayList<>()).add(key);
 		}
 
 		keysByPkg = sortPackagesByNameFqn(keysByPkg);
