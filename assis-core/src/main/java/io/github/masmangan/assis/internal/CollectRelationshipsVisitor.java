@@ -236,7 +236,6 @@ class CollectRelationshipsVisitor {
 		for (VariableDeclarator vd : fd.getVariables()) {
 			String target = null;
 
-			// Reuse the central resolver (SymbolSolver + Index authority)
 			Optional<TypeRef> tr = idx.resolveTarget(vd.getType(), vd); // usageSite can be vd or fd
 			logger.log(Level.INFO, () -> "Trying to resolve type: " + tr);
 
@@ -245,13 +244,9 @@ class CollectRelationshipsVisitor {
 				logger.log(Level.INFO, () -> "Type is present: " + ref);
 
 				if (ref instanceof DeclaredTypeRef dtr) {
-					// Prefer canonical $-fqn derived from AST declaration
-					String fqnDollar = DeclaredIndex.deriveFqnDollar(dtr.declaration());
-					target = fqnDollar;
+					target = DeclaredIndex.deriveFqnDollar(dtr.declaration());
 				} else if (ref instanceof ExternalTypeRef etr) {
 					logger.log(Level.INFO, () -> "External: " + etr);
-
-					target = etr.fqn(); // or etr.displayName()/name() depending on your API
 					// Wait, no association for externals, field emitted earlier!
 					break; // or return or continue
 				} else {
