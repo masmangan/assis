@@ -43,21 +43,16 @@ import com.github.javaparser.resolution.types.ResolvedType;
  */
 public class DeclaredIndex {
 
-	/**
-	 * Logger used by index to warn about type redefinition.
-	 */
 	private static final Logger logger = Logger.getLogger(DeclaredIndex.class.getName());
-
-	/**
-	 *
-	 */
+ 
 	private static final String EMPTY_STRING = "";
 
-	/**
-	 *
-	 */
 	private static final String PACKAGE_SEPARATOR = ".";
 
+	private static final char CHAR_INNER_TYPE_SEPARATOR = '$';
+
+	private static final char CHAR_PACKAGE_SEPARATOR = '.';
+	
 	/**
 	 * FQN → declaration
 	 */
@@ -79,23 +74,13 @@ public class DeclaredIndex {
 	 */
 	private final Map<String, String> uniqueBySimple = new LinkedHashMap<>();
 
+ 
 	/**
-	 *
-	 */
-	private static final char CHAR_INNER_TYPE_SEPARATOR = '$';
-
-	/**
-	 *
-	 */
-	private static final char CHAR_PACKAGE_SEPARATOR = '.';
-
-	/**
-	 * Populates idx with declared types from compilation units.
+	 * Populates index with declared types from compilation units.
 	 *
 	 * @param units
-	 * @return
 	 */
-	public void fill(List<CompilationUnit> units) {
+	public void fill(final List<CompilationUnit> units) {
 
 		for (CompilationUnit unit : units) {
 			for (TypeDeclaration<?> td : unit.getTypes()) {
@@ -132,14 +117,7 @@ public class DeclaredIndex {
 
 	}
 
-	/**
-	 *
-	 * @param idx
-	 * @param unit
-	 * @param td
-	 * @param ownerFqn
-	 * @param separator
-	 */
+ 
 	private void collectTypeRecursive(CompilationUnit unit, TypeDeclaration<?> td, String ownerFqn, String separator) {
 		String name = td.getNameAsString();
 		String fqn;
