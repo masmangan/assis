@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.logging.Logger;
 
 import io.github.masmangan.assis.AssisInfo;
 import io.github.masmangan.assis.io.PlantUMLWriter;
@@ -32,8 +31,6 @@ import io.github.masmangan.assis.io.PlantUMLWriter;
  *
  */
 public final class ClassDiagramGeneration {
-
-	private static final Logger logger = Logger.getLogger(ClassDiagramGeneration.class.getName());
 
 	private final Path outFile;
 
