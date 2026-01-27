@@ -14,6 +14,8 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class GenerateClassDiagramDependencyCoverageSamplesTest {
 
@@ -109,36 +111,25 @@ class GenerateClassDiagramDependencyCoverageSamplesTest {
 		assertPumlNotContains(puml, "..>");
 	}
 
-	@Test
-	void instanceOfsAreEmitted() throws Exception {
-		String puml = generatePumlFromSample("samples/deps/byinstanceof", tempDir, "byinstanceof");
+	@ParameterizedTest(name = "dependency coverage: {0}")
+	@ValueSource(strings = {
+	    "byinstanceof",
+	    "bycast",
+	    "byclassliteral",
+	    "byscope"
+	})
+	void dependencyCoverageSamples(String sample) throws Exception {
+	    String puml = generatePumlFromSample(
+	        "samples/deps/" + sample,
+	        tempDir,
+	        sample
+	    );
 
-		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
+	    assertPumlContainsName(puml, "p1.A");
+	    assertPumlContainsName(puml, "p1.B");
+	    assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
 		assertPumlNotContains(puml, "-->");
-	}
 
-	@Test
-	void castsAreEmitted() throws Exception {
-		String puml = generatePumlFromSample("samples/deps/bycast", tempDir, "bycast");
-
-		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
-		assertPumlNotContains(puml, "-->");
-	}
-
-	@Test
-	void classLiteralsAreEmitted() throws Exception {
-		String puml = generatePumlFromSample("samples/deps/byclassliteral", tempDir, "byclassliteral");
-
-		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
-		assertPumlNotContains(puml, "-->");
-	}
-
-	@Test
-	void namedExpsAreEmitted() throws Exception {
-		String puml = generatePumlFromSample("samples/deps/byscope", tempDir, "byscope");
-
-		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
-		assertPumlNotContains(puml, "-->");
 	}
 
 }
