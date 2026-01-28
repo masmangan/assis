@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.type.Type;
 
 import io.github.masmangan.assis.io.PlantUMLWriter;
@@ -106,4 +108,12 @@ class DependencyContext {
 		er.registerDependency(fromFqn, toFqn);
 	}
 
+	public Optional<TypeRef> resolveScope(NameExpr scopeExpr, Node usageSite) {
+	    return idx.resolveScope(scopeExpr, usageSite);
+	}
+	
 }
+		
+		
+		
+		

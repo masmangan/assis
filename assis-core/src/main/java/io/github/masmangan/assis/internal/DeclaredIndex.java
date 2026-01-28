@@ -29,6 +29,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
 import com.github.javaparser.ast.type.ArrayType;
@@ -658,6 +659,66 @@ public class DeclaredIndex {
 			return Optional.of(new DeclaredTypeRef(indexed));
 		}
 		return Optional.of(new UnresolvedTypeRef(simpleName));
+	}
+
+	public Optional<TypeRef> resolveScope(NameExpr scopeExpr, Node usageSite) {
+	    try {
+	        var valueDecl = scopeExpr.resolve();          // ResolvedValueDeclaration
+	        var valueType = valueDecl.getType();          // ResolvedType
+	        return resolveResolvedTypeToTypeRef(valueType, usageSite);
+	    } catch (Exception e) {
+	        // fallback(s) below
+	    }
+
+	    // Fallback 1: sometimes NameExpr is actually a type name used as qualifier (static call)
+	    String name = scopeExpr.getNameAsString();
+	    TypeDeclaration<?> indexed = getByFqn(name);
+	    if (indexed != null) return Optional.of(new DeclaredTypeRef(indexed));
+
+	    // Fallback 2: return unresolved *type* ref? I'd avoid emitting a dependency to a bare variable name:
+	    return Optional.empty(); // <- prevents "A ..> b"
+	}
+	
+	private Optional<TypeRef> resolveResolvedTypeToTypeRef(
+	        ResolvedType rt,
+	        Node usageSite
+	) {
+	    // 1) Primitives → no dependency
+	    if (rt.isPrimitive()) {
+	        return Optional.empty();
+	    }
+
+	    // 2) Void → no dependency
+	    if (rt.isVoid()) {
+	        return Optional.empty();
+	    }
+
+	    // 3) Reference types (classes, interfaces, enums)
+	    if (rt.isReferenceType()) {
+	        var rrt = rt.asReferenceType();
+	        var qname = rrt.getQualifiedName(); // dot-qualified, not JVM $
+
+	        // a) Declared in our parsed sources
+	        TypeDeclaration<?> td = getByFqn(qname);
+	        if (td != null) {
+	            return Optional.of(new DeclaredTypeRef(td));
+	        }
+
+	        // b) Known but external (JDK, libs)
+	        return Optional.of(new ExternalTypeRef(qname));
+	    }
+
+	    // 4) Arrays → dependency on component type
+	    if (rt.isArray()) {
+	        return resolveResolvedTypeToTypeRef(
+	                rt.asArrayType().getComponentType(),
+	                usageSite
+	        );
+	    }
+
+	    // 5) Type variables, wildcards, etc.
+	    // Usually not diagram-worthy on their own
+	    return Optional.empty();
 	}
 
 }

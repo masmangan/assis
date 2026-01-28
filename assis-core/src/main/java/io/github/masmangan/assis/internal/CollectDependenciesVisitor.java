@@ -132,12 +132,18 @@ final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyCont
 	// no samples!
 	@Override
 	public void visit(MethodCallExpr n, DependencyContext ctx) {
-		n.getScope().ifPresent(scope -> {
-			if (scope instanceof NameExpr ne) {
-				recordScope(ne.getNameAsString(), n, ctx);
-			}
-		});
-		super.visit(n, ctx);
+	    n.getScope().ifPresent(scope -> {
+	        if (scope instanceof NameExpr ne) {
+	            recordScope(ne, n, ctx);        // pass the node
+	        }
+	    });
+	    super.visit(n, ctx);
+	}
+
+	private void recordScope(NameExpr scopeExpr, Node site, DependencyContext ctx) {
+	    if (ownerStack.isEmpty()) return;
+	    ctx.resolveScope(scopeExpr, site)
+	       .ifPresent(target -> collect(owner(), target, ctx));
 	}
 
 	private void enter(TypeDeclaration<?> td) {
