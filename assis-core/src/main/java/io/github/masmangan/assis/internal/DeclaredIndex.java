@@ -5,6 +5,8 @@
 
 package io.github.masmangan.assis.internal;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,8 +43,24 @@ import com.github.javaparser.resolution.types.ResolvedType;
 
 /**
  * Index of declared types (top-level and nested).
+ *
+ * @author Marco Mangan
  */
 public class DeclaredIndex {
+
+	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		pcs.addPropertyChangeListener(l);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		pcs.removePropertyChangeListener(l);
+	}
+
+	private void fireTypeDiscovered(TypeKey tk) {
+		pcs.firePropertyChange("newType", null, tk); // optional, useful for “live”
+	}
 
 	private static final Logger logger = Logger.getLogger(DeclaredIndex.class.getName());
 
@@ -135,6 +153,8 @@ public class DeclaredIndex {
 		}
 
 		TypeKey k = key(fqn);
+
+		fireTypeDiscovered(k);
 
 		if (byKey.containsKey(k)) {
 			logger.log(Level.WARNING, () -> "Attempt to redefine " + fqn);

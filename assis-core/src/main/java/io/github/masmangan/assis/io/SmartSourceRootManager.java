@@ -5,6 +5,8 @@
 
 package io.github.masmangan.assis.io;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,12 +33,28 @@ import io.github.masmangan.assis.util.DeterministicPathList;
  * Uses one {@link SmartSourceRoot} per directory.
  *
  * @see SmartSourceRoot
+ *
+ * @author Marco Mangan
  */
 public class SmartSourceRootManager {
 
+	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		pcs.addPropertyChangeListener(l);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		pcs.removePropertyChangeListener(l);
+	}
+
+	private void fireCompilationUnitDiscovered(CompilationUnit unit) {
+		pcs.firePropertyChange("newUnit", null, unit); // optional, useful for “live”
+	}
+
 	private static final Logger logger = Logger.getLogger(SmartSourceRootManager.class.getName());
 
-	private SmartSourceRootManager() {
+	public SmartSourceRootManager() {
 	}
 
 	/**
@@ -60,7 +78,7 @@ public class SmartSourceRootManager {
 	 * @return compilation units successfully parsed from all roots
 	 * @throws IOException if an I/O error occurs while scanning or parsing
 	 */
-	public static List<CompilationUnit> autoscan(DeterministicPathList sortedSourceRoots) throws IOException {
+	public List<CompilationUnit> autoscan(DeterministicPathList sortedSourceRoots) throws IOException {
 		Objects.requireNonNull(sortedSourceRoots);
 
 		List<CompilationUnit> units = new ArrayList<>();
@@ -85,6 +103,7 @@ public class SmartSourceRootManager {
 				Optional<CompilationUnit> opt = r.getResult();
 				if (opt.isPresent()) {
 					units.add(opt.get());
+					fireCompilationUnitDiscovered(opt.get());
 					addedFromThisRoot++;
 				}
 			}

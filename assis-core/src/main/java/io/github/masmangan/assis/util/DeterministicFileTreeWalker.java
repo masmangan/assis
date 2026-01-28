@@ -5,6 +5,8 @@
 
 package io.github.masmangan.assis.util;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,10 +25,26 @@ import java.util.function.Predicate;
  * directories are visited before their children - Directory children order:
  * directories first, then files; both sorted by name; tie-break by absolute
  * path
+ *
+ * @author Marco Mangan
  */
 public final class DeterministicFileTreeWalker {
 
-	private DeterministicFileTreeWalker() {
+	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		pcs.addPropertyChangeListener(l);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		pcs.removePropertyChangeListener(l);
+	}
+
+	private void fireJavaFileDiscovered(Path p) {
+		pcs.firePropertyChange("newPath", null, p); // optional, useful for “live”
+	}
+
+	public DeterministicFileTreeWalker() {
 	}
 
 	/**
@@ -36,8 +54,7 @@ public final class DeterministicFileTreeWalker {
 	 * @param shouldVisitDir predicate to decide whether to traverse into a
 	 *                       directory
 	 */
-	public static DeterministicPathList discoverJavaFiles(Set<Path> roots, Predicate<Path> shouldVisitDir)
-			throws IOException {
+	public DeterministicPathList discoverJavaFiles(Set<Path> roots, Predicate<Path> shouldVisitDir) throws IOException {
 		Objects.requireNonNull(shouldVisitDir, "shouldVisitDir");
 
 		List<Path> canonRoots = canonicalizeRoots(roots);
@@ -49,6 +66,7 @@ public final class DeterministicFileTreeWalker {
 					walkDirForJava(root, out, shouldVisitDir);
 				} else if (Files.isRegularFile(root) && root.toString().endsWith(".java")) {
 					out.add(root);
+					fireJavaFileDiscovered(root);
 				}
 			}
 		}
@@ -57,7 +75,7 @@ public final class DeterministicFileTreeWalker {
 
 	/* ===================== internals ===================== */
 
-	private static void walkDirForJava(Path dir, List<Path> out, Predicate<Path> shouldVisitDir) throws IOException {
+	private void walkDirForJava(Path dir, List<Path> out, Predicate<Path> shouldVisitDir) throws IOException {
 		for (Path child : sortedChildren(dir)) {
 			if (Files.isDirectory(child)) {
 				if (shouldVisitDir.test(child)) {
@@ -65,6 +83,7 @@ public final class DeterministicFileTreeWalker {
 				}
 			} else if (Files.isRegularFile(child) && child.toString().endsWith(".java")) {
 				out.add(child);
+				fireJavaFileDiscovered(child);
 			}
 		}
 	}
@@ -97,4 +116,5 @@ public final class DeterministicFileTreeWalker {
 		return roots.stream().filter(Objects::nonNull).map(p -> p.toAbsolutePath().normalize()).distinct()
 				.sorted(Comparator.comparing(Path::toString)).toList();
 	}
+
 }

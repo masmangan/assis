@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import com.github.javaparser.ast.CompilationUnit;
 
 import io.github.masmangan.assis.internal.ClassDiagramGeneration;
+import io.github.masmangan.assis.internal.Dashboard;
 import io.github.masmangan.assis.internal.DeclaredIndex;
 import io.github.masmangan.assis.io.SmartSourceRootManager;
 import io.github.masmangan.assis.util.DeterministicPathList;
@@ -98,13 +99,18 @@ public class GenerateClassDiagram {
 		logger.log(Level.INFO, () -> "Generating " + outputFile + "...");
 
 		DeterministicPathList sortedSourceRoots = DeterministicPathList.fromSourceRoots(sourceRoots);
-		List<CompilationUnit> units = SmartSourceRootManager.autoscan(sortedSourceRoots);
+		SmartSourceRootManager ssrt = new SmartSourceRootManager();
+		ssrt.addPropertyChangeListener(Dashboard.getDashboard());
+
+		List<CompilationUnit> units = ssrt.autoscan(sortedSourceRoots);
 
 		DeclaredIndex index = new DeclaredIndex();
+		index.addPropertyChangeListener(Dashboard.getDashboard());
 		index.fill(units);
 
 		new ClassDiagramGeneration(outputFile, index).run();
 		logger.log(Level.INFO, () -> "Writing " + outputFile + " complete.");
+		System.out.println(Dashboard.getDashboard().toString());
 	}
 
 }

@@ -20,10 +20,10 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
-import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.utils.Log;
 import com.github.javaparser.utils.SourceRoot;
 
+import io.github.masmangan.assis.internal.Dashboard;
 import io.github.masmangan.assis.util.DeterministicFileTreeWalker;
 import io.github.masmangan.assis.util.DeterministicPathList;
 
@@ -42,10 +42,13 @@ import io.github.masmangan.assis.util.DeterministicPathList;
  * locked after construction because other parts of the system rely on a stable
  * "unparsed types remain unresolved" rule (i.e., no
  * {@code ReflectionTypeSolver}).
+ *
+ * @author Marco Mangan
  */
 public class SmartSourceRoot extends SourceRoot {
 
 	private final Path rootPath;
+
 	private boolean locked = false;
 
 	/**
@@ -62,9 +65,10 @@ public class SmartSourceRoot extends SourceRoot {
 		CombinedTypeSolver ts = new CombinedTypeSolver();
 		// Intentionally source-only: unparsed types remain unresolved (no
 		// ReflectionTypeSolver).
+		// FIXME: put solver back!
+		// ts.add(new ReflectionTypeSolver());
 
-		ts.add(new JavaParserTypeSolver(root));
-		ts.add(new ReflectionTypeSolver());
+		// ts.add(new JavaParserTypeSolver(root));
 
 		JavaSymbolSolver jss = new JavaSymbolSolver(ts);
 
@@ -97,7 +101,11 @@ public class SmartSourceRoot extends SourceRoot {
 		}
 
 		// D1: deterministic discovery order within this source root.
-		DeterministicPathList javaFiles = DeterministicFileTreeWalker.discoverJavaFiles(Set.of(startPath),
+
+		DeterministicFileTreeWalker dftw = new DeterministicFileTreeWalker();
+		dftw.addPropertyChangeListener(Dashboard.getDashboard());
+
+		DeterministicPathList javaFiles = dftw.discoverJavaFiles(Set.of(startPath),
 				dir -> shouldVisitDirectory(dir, startPath));
 
 		for (Path file : javaFiles) {
@@ -157,4 +165,5 @@ public class SmartSourceRoot extends SourceRoot {
 			Log.info("Parsing package \"%s\"", () -> startPackage);
 		}
 	}
+
 }
