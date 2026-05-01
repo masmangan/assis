@@ -171,13 +171,6 @@ final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyCont
 		}
 	}
 
-	private void recordScope(String simpleName, Node site, DependencyContext ctx) {
-		if (ownerStack.isEmpty()) {
-			return;
-		}
-		ctx.resolveScopeName(simpleName, site).ifPresent(target -> collect(owner(), target, ctx));
-	}
-
 	private void collect(TypeDeclaration<?> from, TypeRef to, DependencyContext ctx) {
 
 		if (ctx.hasDependency(from, to)) {
