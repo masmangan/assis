@@ -254,46 +254,23 @@ public class DeclaredIndex {
 
 		// Type parameters: T -> first bound if exists, else unresolved "T"
 		if (typeNode instanceof TypeParameter tp) {
-			if (!tp.getTypeBound().isEmpty()) {
-				return resolveTarget(tp.getTypeBound().get(0));
-			}
-			return Optional.of(new UnresolvedTypeRef(tp.getNameAsString()));
+			return resolveTargetParameter(tp);
 		}
 
 		// Wildcards: ? extends Foo -> Foo ; plain ? -> unresolved "?"
 		if (typeNode instanceof WildcardType wt) {
-			Optional<ReferenceType> extendedType = wt.getExtendedType();
-			if (extendedType.isPresent()) {
-				return resolveTarget(extendedType.get());
-			}
-			Optional<ReferenceType> superType = wt.getSuperType();
-			if (superType.isPresent()) {
-				return resolveTarget(superType.get());
-			}
-			return Optional.of(new UnresolvedTypeRef("?"));
+			return resolveTargetWildCard(wt);
 		}
 
 		// The "normal" case
 		if (typeNode instanceof ClassOrInterfaceType cit) {
-			logger.log(Level.INFO, () -> "Trying to resolve type: " + cit);
-
-			Optional<TypeRef> solved = tryResolveWithSolver(cit);
-			if (solved.isPresent()) {
-				return solved;
-			}
-
-			String fallbackName = cit.getNameWithScope(); // may be Outer.Inner
-			logger.log(Level.INFO, () -> "Textual: " + fallbackName);
-
-			TypeDeclaration<?> td = getByFqn(fallbackName);
-			if (td != null) {
-				logger.log(Level.INFO, () -> "Index hit: " + fallbackName);
-				return Optional.of(new DeclaredTypeRef(td));
-			}
-
-			return Optional.of(new UnresolvedTypeRef(fallbackName));
+			return resolveTargetClassOrInterface(cit);
 		}
 
+		return resolveTargetUnresolved(typeNode);
+	}
+
+	private Optional<TypeRef> resolveTargetUnresolved(Type typeNode) {
 		// Last-resort: keep a name, don’t go empty
 		// (IntersectionType, UnionType, VarType, UnknownType, etc.)
 		String label = typeNode.asString();
@@ -301,6 +278,45 @@ public class DeclaredIndex {
 			label = typeNode.toString();
 		}
 		return Optional.of(new UnresolvedTypeRef(label));
+	}
+
+	private Optional<TypeRef> resolveTargetClassOrInterface(ClassOrInterfaceType cit) {
+		logger.log(Level.INFO, () -> "Trying to resolve type: " + cit);
+
+		Optional<TypeRef> solved = tryResolveWithSolver(cit);
+		if (solved.isPresent()) {
+			return solved;
+		}
+
+		String fallbackName = cit.getNameWithScope(); // may be Outer.Inner
+		logger.log(Level.INFO, () -> "Textual: " + fallbackName);
+
+		TypeDeclaration<?> td = getByFqn(fallbackName);
+		if (td != null) {
+			logger.log(Level.INFO, () -> "Index hit: " + fallbackName);
+			return Optional.of(new DeclaredTypeRef(td));
+		}
+
+		return Optional.of(new UnresolvedTypeRef(fallbackName));
+	}
+
+	private Optional<TypeRef> resolveTargetWildCard(WildcardType wt) {
+		Optional<ReferenceType> extendedType = wt.getExtendedType();
+		if (extendedType.isPresent()) {
+			return resolveTarget(extendedType.get());
+		}
+		Optional<ReferenceType> superType = wt.getSuperType();
+		if (superType.isPresent()) {
+			return resolveTarget(superType.get());
+		}
+		return Optional.of(new UnresolvedTypeRef("?"));
+	}
+
+	private Optional<TypeRef> resolveTargetParameter(TypeParameter tp) {
+		if (!tp.getTypeBound().isEmpty()) {
+			return resolveTarget(tp.getTypeBound().get(0));
+		}
+		return Optional.of(new UnresolvedTypeRef(tp.getNameAsString()));
 	}
 
 	private Optional<TypeRef> tryResolveWithSolver(ClassOrInterfaceType cit) {
