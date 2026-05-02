@@ -44,8 +44,6 @@ public final class DeterministicFileTreeWalker {
 		pcs.firePropertyChange("newPath", null, p); // optional, useful for “live”
 	}
 
-	public DeterministicFileTreeWalker() {
-	}
 
 	/**
 	 * Discovers .java files under the given roots in a deterministic order.

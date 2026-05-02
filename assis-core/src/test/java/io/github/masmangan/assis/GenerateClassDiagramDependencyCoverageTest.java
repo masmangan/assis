@@ -22,16 +22,6 @@ class GenerateClassDiagramDependencyCoverageSamplesTest {
 	@TempDir
 	Path tempDir;
 
-	// related to visitor bug
-//	@Test
-//	void methodBodyDependency() throws Exception {
-//		String puml = generatePumlFromSample("samples/deps/bylocal", tempDir, "bylocal");
-//
-//		assertPumlContainsName(puml, "A");
-//		assertPumlContainsName(puml, "B");
-//		assertAnyLineContainsAll(puml, "p1.A", "..>", "p1.B");
-//	}
-
 	@Test
 	void methodReturnTypeCreatesDependency() throws Exception {
 		String puml = generatePumlFromSample("samples/deps/byreturn", tempDir, "byreturn");

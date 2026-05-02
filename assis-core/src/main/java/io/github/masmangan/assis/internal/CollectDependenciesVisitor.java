@@ -103,14 +103,6 @@ final class CollectDependenciesVisitor extends VoidVisitorAdapter<DependencyCont
 		super.visit(md, ctx);
 	}
 
-	// related to visitor bug
-//	@Override
-//	public void visit(ObjectCreationExpr n, DependencyContext ctx) {
-//		logger.log(Level.INFO, () -> "Object creation for " + n);
-//		recordTypeUse(n.getType(), n, ctx);
-//		super.visit(n, ctx);
-//	}
-
 	@Override
 	public void visit(InstanceOfExpr n, DependencyContext ctx) {
 		recordTypeUse(n.getType(), n, ctx);

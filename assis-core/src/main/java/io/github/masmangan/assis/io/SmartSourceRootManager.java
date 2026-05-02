@@ -53,10 +53,7 @@ public class SmartSourceRootManager {
 	}
 
 	private static final Logger logger = Logger.getLogger(SmartSourceRootManager.class.getName());
-
-	public SmartSourceRootManager() {
-	}
-
+ 
 	/**
 	 * Scans the given Java source root directories and parses all {@code .java}
 	 * files found.
