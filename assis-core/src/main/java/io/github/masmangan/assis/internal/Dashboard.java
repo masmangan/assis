@@ -52,10 +52,8 @@ public final class Dashboard implements PropertyChangeListener {
 			int n = typeCount.incrementAndGet();
 			System.out.println("Discovered type #" + n + ": " + key.text());
 		}
-		default -> {
-			System.out.println("Unknow event #" + evt);
+		default -> System.out.println("Unknow event #" + evt);
 
-		}
 		}
 	}
 
