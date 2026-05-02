@@ -34,6 +34,7 @@ import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.ast.nodeTypes.modifiers.NodeWithAccessModifiers;
 import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.type.TypeParameter;
 import com.github.javaparser.ast.type.WildcardType;
@@ -261,11 +262,13 @@ public class DeclaredIndex {
 
 		// Wildcards: ? extends Foo -> Foo ; plain ? -> unresolved "?"
 		if (typeNode instanceof WildcardType wt) {
-			if (wt.getExtendedType().isPresent()) {
-				return resolveTarget(wt.getExtendedType().get());
+			Optional<ReferenceType> extendedType = wt.getExtendedType();
+			if (extendedType.isPresent()) {
+				return resolveTarget(extendedType.get());
 			}
-			if (wt.getSuperType().isPresent()) {
-				return resolveTarget(wt.getSuperType().get());
+			Optional<ReferenceType> superType = wt.getSuperType();
+			if (superType.isPresent()) {
+				return resolveTarget(superType.get());
 			}
 			return Optional.of(new UnresolvedTypeRef("?"));
 		}
