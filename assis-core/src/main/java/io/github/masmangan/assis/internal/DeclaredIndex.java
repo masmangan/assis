@@ -672,7 +672,7 @@ public class DeclaredIndex {
 	}
 
 	// Scope simple name is not solver-confirmed; unresolved unless indexed.
-	public Optional<TypeRef> resolveScopeName(String simpleName, Node usageSite) {
+	public Optional<TypeRef> resolveScopeName(String simpleName) {
 		TypeDeclaration<?> indexed = getByFqn(simpleName);
 		if (indexed != null) {
 			return Optional.of(new DeclaredTypeRef(indexed));

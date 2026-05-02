@@ -49,7 +49,7 @@ class DependencyContext {
 	 * @return
 	 */
 	public Optional<TypeRef> resolveScopeName(String simpleName, Node usageSite) {
-		return idx.resolveScopeName(simpleName, usageSite);
+		return idx.resolveScopeName(simpleName);
 	}
 
 	/**
